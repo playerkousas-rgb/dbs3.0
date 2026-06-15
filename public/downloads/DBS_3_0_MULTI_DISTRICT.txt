@@ -60,25 +60,30 @@ function initializeSheets(ss) {
   var ownerEmail = Session.getEffectiveUser().getEmail() || '';
   var sheetsConfig = [
     {
+      name: 'README_新手必看',
+      headers: ['項目', '說明'],
+      data: getReadmeSheetData_().slice(1)
+    },
+    {
       name: 'Config',
       headers: ['Key', 'Value', 'Description'],
       data: [
-        ['DISTRICT_CODE', CONFIG.DEFAULT_DISTRICT_CODE, '區碼（建議 3-4 個英文字，例如 SKW / CHW）'],
-        ['DISTRICT_NAME', CONFIG.DEFAULT_DISTRICT_NAME, '顯示於前端及 email 的地區名稱'],
+        ['DISTRICT_CODE', CONFIG.DEFAULT_DISTRICT_CODE, '【必填】區碼（建議 3-4 個英文字，例如 SKW / CHW）'],
+        ['DISTRICT_NAME', CONFIG.DEFAULT_DISTRICT_NAME, '【必填】顯示於前端及 email 的地區名稱'],
         ['CURRENT_TERM_START', '2025-04-01', '主考任期開始日期'],
         ['CURRENT_TERM_END', '2027-03-31', '主考任期結束日期'],
-        ['EMAIL_REPLY_TO', ownerEmail, '系統通知及秘書聯絡電郵（請自行更新）'],
-        ['ADC_EMAIL', ownerEmail, 'ADC 主考申請通知收件人（請自行更新）'],
+        ['EMAIL_REPLY_TO', ownerEmail, '【必填】系統通知及秘書聯絡電郵（請自行更新）'],
+        ['ADC_EMAIL', ownerEmail, '【必填】ADC 主考申請通知收件人（請自行更新）'],
         ['LEADER_TIMEOUT_HOURS', '72', '團長確認時限（小時）'],
         ['EXAM_DEADLINE_DAYS', '90', '考核完成限期（日）'],
         ['NEXT_APPLICATION_ID', '1', '下一個申請編號流水號'],
         ['NEXT_CERTIFICATE_ID', '1', '下一個證書隊列編號流水號'],
         ['CERT_SEQ_2025', '1', '2025 年度證書流水號'],
         ['CERT_SEQ_2026', '1', '2026 年度證書流水號'],
-        ['WEB_APP_URL', '', 'Apps Script 部署後填入 exec URL'],
-        ['FRONTEND_URL', CONFIG.DEFAULT_FRONTEND_URL, '前端網址（會用來組裝 email links）'],
-        ['STAFF_TOKEN', 'change-this-staff-token', '秘書後台密鑰（請立即更改）'],
-        ['ADC_TOKEN', 'change-this-adc-token', 'ADC 審批密鑰（請立即更改）'],
+        ['WEB_APP_URL', '', '【Deploy 後必填】貼上你的 Apps Script /exec URL，並用這條 URL 提交接入'],
+        ['FRONTEND_URL', CONFIG.DEFAULT_FRONTEND_URL, '前端網址（已預設平台網址，一般不用改）'],
+        ['STAFF_TOKEN', 'change-this-staff-token', '【必填】秘書後台密鑰（請立即更改）'],
+        ['ADC_TOKEN', 'change-this-adc-token', '【必填】ADC 審批密鑰（請立即更改）'],
         ['CERT_SIGNER_TITLE_CN', '助理區總監(童軍)', '證書簽發人中文'],
         ['CERT_SIGNER_TITLE_EN', 'Assistant District Commissioner (Scouts)', '證書簽發人英文'],
         ['CERT_SIGNER_LABEL_CN', '助理區總監(童軍)', '證書中文職銜'],
@@ -87,8 +92,8 @@ function initializeSheets(ss) {
         ['LAST_PATCH_APPLIED', '', '最近一次 patch 記錄（可留空）']
       ]
     },
-    { name: 'Groups', headers: ['group_id', 'group_number', 'group_name', 'leader_name', 'leader_email', 'assistant_leader_email', 'district_area', 'updated_at'], data: [] },
-    { name: 'BadgeCodes', headers: ['badge_name', 'badge_code', 'badge_name_en', 'category', 'category_en', 'full_title', 'active', 'duplicate', 'Remark'], data: [] },
+    { name: 'Groups', headers: ['group_id', 'group_number', 'group_name', 'leader_name', 'leader_email', 'assistant_leader_email', 'district_area', 'updated_at'], data: getMockGroupsData_() },
+    { name: 'BadgeCodes', headers: ['badge_name', 'badge_code', 'badge_name_en', 'category', 'category_en', 'full_title', 'active', 'duplicate', 'Remark'], data: getDefaultBadgeCodesData_() },
     { name: 'Examiners', headers: ['examiner_id', 'name', 'unit', 'email', 'phone', 'district_badges', 'group_badges', 'term_start', 'term_end', 'status', 'current_load', 'max_load', 'updated_at'], data: [] },
     {
       name: 'Applications',
@@ -131,7 +136,7 @@ function initializeSheets(ss) {
         var widths = [60,100,180,100,120,60,140,200,180,80,100,120,80,180,180,180,140,120,150,80,150];
         widths.forEach(function(w, idx) { sheet.setColumnWidth(idx + 1, w); });
       } else {
-        sheet.setColumnWidth(1, 140);
+        sheet.setColumnWidth(1, 180);
       }
       config.data.forEach(function(row) { sheet.appendRow(row); });
     }
@@ -139,6 +144,222 @@ function initializeSheets(ss) {
 
   var defaultSheet = ss.getSheetByName('Sheet1');
   if (defaultSheet && ss.getSheets().length > 1) ss.deleteSheet(defaultSheet);
+
+  buildExaminerMatrixHeader_(ss);
+  setSheetColorsAndVisibility_(ss);
+}
+
+
+
+function getDefaultBadgeCodesData_() {
+  return [
+    ["釣魚", "IAN", "Angler", "興趣", "Interest", "興趣 - 釣魚", "TRUE", "1", ""],
+    ["愛護動物", "IAC", "Animal Care", "興趣", "Interest", "興趣 - 愛護動物", "TRUE", "1", ""],
+    ["射箭", "IAR", "Archery", "興趣", "Interest", "興趣 - 射箭", "TRUE", "1", ""],
+    ["藝術", "IAT", "Artist", "興趣", "Interest", "興趣 - 藝術", "TRUE", "1", ""],
+    ["運動", "IAH", "Athlete", "興趣", "Interest", "興趣 - 運動", "TRUE", "1", ""],
+    ["營地烹飪", "ICC", "Camp Cook", "興趣", "Interest", "興趣 - 營地烹飪", "TRUE", "1", ""],
+    ["獨木舟", "ICA", "Canoeist", "興趣", "Interest", "興趣 - 獨木舟", "TRUE", "1", ""],
+    ["搜集", "ICO", "Collector", "興趣", "Interest", "興趣 - 搜集", "TRUE", "1", ""],
+    ["電腦", "ICP", "Computer", "興趣", "Interest", "興趣 - 電腦", "TRUE", "1", ""],
+    ["單車", "ICY", "Cyclist", "興趣", "Interest", "興趣 - 單車", "TRUE", "1", ""],
+    ["龍舟", "IDB", "Dragon Boatman", "興趣", "Interest", "興趣 - 龍舟", "TRUE", "1", ""],
+    ["步操", "IFO", "Footdrill", "興趣", "Interest", "興趣 - 步操", "TRUE", "1", ""],
+    ["地質", "IGE", "Geologist", "興趣", "Interest", "興趣 - 地質", "TRUE", "1", ""],
+    ["騎術", "IHO", "Horseman", "興趣", "Interest", "興趣 - 騎術", "TRUE", "1", ""],
+    ["風箏", "IKF", "Kite Flyer", "興趣", "Interest", "興趣 - 風箏", "TRUE", "1", ""],
+    ["圖書管理", "ILI", "Librarian", "興趣", "Interest", "興趣 - 圖書管理", "TRUE", "1", ""],
+    ["氣象", "IME", "Meteorologist", "興趣", "Interest", "興趣 - 氣象", "TRUE", "1", ""],
+    ["模型製作", "IMM", "Model Maker", "興趣", "Interest", "興趣 - 模型製作", "TRUE", "1", ""],
+    ["音樂", "IMU", "Musician", "興趣", "Interest", "興趣 - 音樂", "TRUE", "1", ""],
+    ["自然", "INA", "Naturalist", "興趣", "Interest", "興趣 - 自然", "TRUE", "1", ""],
+    ["公園定向", "IPO", "Park Orienteer", "興趣", "Interest", "興趣 - 公園定向", "TRUE", "1", ""],
+    ["攝影", "IPH", "Photographer", "興趣", "Interest", "興趣 - 攝影", "TRUE", "1", ""],
+    ["划艇", "IRO", "Rowing Boatman", "興趣", "Interest", "興趣 - 划艇", "TRUE", "1", ""],
+    ["風帆", "ISA", "Sailor", "興趣", "Interest", "興趣 - 風帆", "TRUE", "1", ""],
+    ["農務", "ISM", "Smallholder", "興趣", "Interest", "興趣 - 農務", "TRUE", "1", ""],
+    ["游泳", "ISW", "Swimmer", "興趣", "Interest", "興趣 - 游泳", "TRUE", "1", ""],
+    ["旅遊", "ITO", "Tourism", "興趣", "Interest", "興趣 - 旅遊", "TRUE", "1", ""],
+    ["滑浪風帆", "IWI", "Windsurfer", "興趣", "Interest", "興趣 - 滑浪風帆", "TRUE", "1", ""],
+    ["觀鳥", "IBW", "Birdwatcher", "興趣", "Interest", "興趣 - 觀鳥", "TRUE", "1", ""],
+    ["射箭", "PAR", "Archery", "技能", "Pursuit", "技能 - 射箭", "TRUE", "1", ""],
+    ["天象", "PAS", "Astronomer", "技能", "Pursuit", "技能 - 天象", "TRUE", "1", ""],
+    ["航空領航", "PAN", "Aviation Navigator", "技能", "Pursuit", "技能 - 航空領航", "TRUE", "1", ""],
+    ["原野烹飪", "PBA", "Backwoods cook", "技能", "Pursuit", "技能 - 原野烹飪", "TRUE", "1", ""],
+    ["艇長", "PBO", "Boatswain", "技能", "Pursuit", "技能 - 艇長", "TRUE", "1", ""],
+    ["露營", "PCM", "Camper", "技能", "Pursuit", "技能 - 露營", "TRUE", "1", ""],
+    ["獨木舟水球", "PCP", "Canoe Polo", "技能", "Pursuit", "技能 - 獨木舟水球", "TRUE", "1", ""],
+    ["獨木舟", "PCA", "Canoeist", "技能", "Pursuit", "技能 - 獨木舟", "TRUE", "1", ""],
+    ["通訊", "PCO", "Communicator", "技能", "Pursuit", "技能 - 通訊 (A)", "TRUE", "2", ""],
+    ["通訊", "PCO", "Communicator", "技能", "Pursuit", "技能 - 通訊 (B)", "TRUE", "2", ""],
+    ["電腦", "PCT", "Computer", "技能", "Pursuit", "技能 - 電腦", "TRUE", "1", ""],
+    ["烹飪 (中式)", "PCD", "Cook (Chinese Dishes)", "技能", "Pursuit", "技能 - 烹飪 (中式)", "TRUE", "1", ""],
+    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (釘書)", "TRUE", "5", ""],
+    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (木工)", "TRUE", "5", ""],
+    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (皮工)", "TRUE", "5", ""],
+    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (印刷)", "TRUE", "5", ""],
+    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (籐工)", "TRUE", "5", ""],
+    ["電子", "PEL", "Electronics", "技能", "Pursuit", "技能 - 電子", "TRUE", "1", ""],
+    ["探險", "PEX", "Explorer", "技能", "Pursuit", "技能 - 探險", "TRUE", "1", ""],
+    ["步操", "PFO", "Footdrill", "技能", "Pursuit", "技能 - 步操", "TRUE", "1", ""],
+    ["模擬飛行", "PFS", "Flight Simulator", "技能", "Pursuit", "技能 - 模擬飛行", "TRUE", "1", "STC"],
+    ["獨木舟國際賽艇", "PIR", "International Racing Kayak", "技能", "Pursuit", "技能 - 獨木舟國際賽艇", "TRUE", "1", ""],
+    ["地圖繪製", "PMM", "Map Maker", "技能", "Pursuit", "技能 - 地圖繪製", "TRUE", "1", ""],
+    ["地圖閱讀", "PMR", "Map Reader", "技能", "Pursuit", "技能 - 地圖閱讀", "TRUE", "1", ""],
+    ["射擊", "PMS", "Marksman", "技能", "Pursuit", "技能 - 射擊", "TRUE", "1", ""],
+    ["技擊", "PMA", "Master-at-arms", "技能", "Pursuit", "技能 - 技擊", "TRUE", "1", ""],
+    ["機械", "PMC", "Mechanic", "技能", "Pursuit", "技能 - 機械", "TRUE", "1", ""],
+    ["氣象", "PME", "Meteorologist", "技能", "Pursuit", "技能 - 氣象", "TRUE", "1", ""],
+    ["多媒體創作", "PMD", "Multimedia Designer", "技能", "Pursuit", "技能 - 多媒體創作", "TRUE", "1", ""],
+    ["領航", "PNA", "Navigator", "技能", "Pursuit", "技能 - 領航", "TRUE", "1", ""],
+    ["觀察", "POB", "Observer", "技能", "Pursuit", "技能 - 觀察", "TRUE", "1", ""],
+    ["野外定向", "POR", "Orienteer", "技能", "Pursuit", "技能 - 野外定向", "TRUE", "1", ""],
+    ["先鋒工程", "PPI", "Pioneer", "技能", "Pursuit", "技能 - 先鋒工程", "TRUE", "1", ""],
+    ["編程", "PPR", "Programmer", "技能", "Pursuit", "技能 - 編程", "TRUE", "1", ""],
+    ["風帆賽艇舵手", "PRH", "Race Helmsman", "技能", "Pursuit", "技能 - 風帆賽艇舵手", "TRUE", "1", ""],
+    ["風帆", "PSA", "Sailor", "技能", "Pursuit", "技能 - 風帆", "TRUE", "1", ""],
+    ["徒手潛水", "PSD", "Skin Diver", "技能", "Pursuit", "技能 - 徒手潛水", "TRUE", "1", ""],
+    ["體育", "PSP", "Sportsman", "技能", "Pursuit", "技能 - 體育", "TRUE", "1", ""],
+    ["樹木護理", "PTC", "Tree Carer", "技能", "Pursuit", "技能 - 樹木護理", "TRUE", "1", ""],
+    ["國際友誼", "PWF", "World Friendship", "技能", "Pursuit", "技能 - 國際友誼", "TRUE", "1", ""],
+    ["營地管理", "SCW", "Camp Warden", "服務", "Service", "服務 - 營地管理", "TRUE", "1", ""],
+    ["獨木舟救生", "SCR", "Canoe Rescuer", "服務", "Service", "服務 - 獨木舟救生", "TRUE", "1", ""],
+    ["公民", "SCI", "Civis", "服務", "Service", "服務 - 公民", "TRUE", "1", ""],
+    ["護養", "SCO", "Conservator", "服務", "Service", "服務 - 護養", "TRUE", "2", "Accept - 舊舵手"],
+    ["共融", "SDA", "Disability Awareness", "服務", "Service", "服務 - 共融", "TRUE", "1", ""],
+    ["環境保護", "SEP", "Environmental Protection", "服務", "Service", "服務 - 環境保護", "TRUE", "1", ""],
+    ["消防", "SFI", "Fireman", "服務", "Service", "服務 - 消防", "TRUE", "1", ""],
+    ["急救", "SFA", "First Aider", "服務", "Service", "服務 - 急救", "TRUE", "1", ""],
+    ["指引", "SGU", "Guide", "服務", "Service", "服務 - 指引", "TRUE", "1", ""],
+    ["語言", "SIN", "Interpreter", "服務", "Service", "服務 - 語言 (英語)", "TRUE", "2", ""],
+    ["語言", "SIN", "Interpreter", "服務", "Service", "服務 - 語言 (普通話)", "TRUE", "2", ""],
+    ["工藝", "SJO", "Jobman", "服務", "Service", "服務 - 工藝", "TRUE", "1", ""],
+    ["拯溺", "SLI", "Lifesaver", "服務", "Service", "服務 - 拯溺", "TRUE", "1", ""],
+    ["精神健康", "SMH", "Mental Health Ambassador", "服務", "Service", "服務 - 精神健康", "TRUE", "1", ""],
+    ["食物營養", "SNU", "Nutritionist", "服務", "Service", "服務 - 食物營養", "TRUE", "1", ""],
+    ["領港", "SPI", "Pilot", "服務", "Service", "服務 - 領港", "TRUE", "1", ""],
+    ["公共衛生", "SPH", "Public Health Ambassador", "服務", "Service", "服務 - 公共衛生", "TRUE", "1", ""],
+    ["物資管理", "SQU", "Quartermaster", "服務", "Service", "服務 - 物資管理", "TRUE", "1", ""],
+    ["秘書", "SSE", "Secretary", "服務", "Service", "服務 - 秘書", "TRUE", "1", ""],
+    ["天象", "INAS", "Astronomer", "教導", "Instructor", "教導 - 天象", "TRUE", "1", ""],
+    ["原野烹飪", "INBA", "Backswoodcook", "教導", "Instructor", "教導 - 原野烹飪", "TRUE", "1", ""],
+    ["露營", "INCA", "Camper", "教導", "Instructor", "教導 - 露營", "TRUE", "1", ""],
+    ["通訊", "INCM", "Communicator", "教導", "Instructor", "教導 - 通訊", "TRUE", "1", ""],
+    ["護養", "INCO", "Conservator", "教導", "Instructor", "教導 - 護養", "TRUE", "1", ""],
+    ["烹飪（中式）", "INCD", "Cook (Chinese Dishes)", "教導", "Instructor", "教導 - 烹飪（中式）", "TRUE", "1", ""],
+    ["單車", "INCY", "Cyclist", "教導", "Instructor", "教導 - 單車", "TRUE", "1", ""],
+    ["模型飛行", "INFS", "Flight Simulator", "教導", "Instructor", "教導 - 模型飛行", "TRUE", "1", ""],
+    ["林務", "INFO", "Forester", "教導", "Instructor", "教導 - 林務", "TRUE", "1", ""],
+    ["拯溺", "INLI", "Lifesaver", "教導", "Instructor", "教導 - 拯溺", "TRUE", "1", ""],
+    ["地圖繪製", "INMM", "Map Maker", "教導", "Instructor", "教導 - 地圖繪製", "TRUE", "1", ""],
+    ["機械", "INMC", "Mechanic", "教導", "Instructor", "教導 - 機械", "TRUE", "1", ""],
+    ["氣象", "INME", "Meteorologist", "教導", "Instructor", "教導 - 氣象", "TRUE", "1", ""],
+    ["多媒體創作", "INMD", "Multimedia Designer", "教導", "Instructor", "教導 - 多媒體創作", "TRUE", "1", ""],
+    ["觀察", "INOB", "Observer", "教導", "Instructor", "教導 - 觀察", "TRUE", "1", ""],
+    ["野外定向", "INOR", "Orienteer", "教導", "Instructor", "教導 - 野外定向", "TRUE", "1", ""],
+    ["攝影", "INPH", "Photographer", "教導", "Instructor", "教導 - 攝影", "TRUE", "1", ""],
+    ["先鋒工程", "INPI", "Pioneer", "教導", "Instructor", "教導 - 先鋒工程", "TRUE", "1", ""],
+    ["風帆", "INSA", "Sailor", "教導", "Instructor", "教導 - 風帆", "TRUE", "1", ""],
+    ["游泳", "INSW", "Swimmer", "教導", "Instructor", "教導 - 游泳", "TRUE", "1", ""],
+    ["樹木護理", "INTC", "Tree Carer", "教導", "Instructor", "教導 - 樹木護理", "TRUE", "1", ""],
+    ["社區參與章", "CIB", "Community Involvement Badge", "其他", "Other", "社區參與", "TRUE", "1", ""],
+    ["艇工", "SOA", "Oarsman", "其他", "Other", "艇工", "TRUE", "1", ""],
+    ["水手", "SBM", "Boatman", "其他", "Other", "水手", "TRUE", "1", ""],
+    ["水手長", "SBW", "Boatswain", "其他", "Other", "水手長", "TRUE", "1", ""],
+    ["初級航空活動", "BAA", "Basic Air Activity", "其他", "Other", "初級航空活動", "TRUE", "1", ""],
+    ["中級航空活動", "IAA", "Intermediate Air Activity", "其他", "Other", "中級航空活動", "TRUE", "1", ""],
+    ["高級航空活動", "AAA", "Advanced Air Activity", "其他", "Other", "高級航空活動", "TRUE", "1", ""],
+    ["繩結", "SKC", "Knotting", "其他", "Other", "繩結", "TRUE", "1", ""],
+    ["領導才", "SLTC", "Leadership Training", "其他", "Other", "領導才", "TRUE", "1", ""],
+    ["宗教章", "SRB", "Religious Badge", "其他", "Other", "宗教章", "TRUE", "1", ""],
+    ["維護自然世界章", "WCB", "World Conservation Badge", "其他", "Other", "維護自然世界", "TRUE", "1", ""],
+    ["世界童軍環境章", "WSE", "World Scout Environment Badge", "其他", "Other", "世界童軍環境", "TRUE", "1", ""],
+    ["深資童軍先修章", "VSL", "Venture Scout Link Badge", "其他", "Other", "深資童軍先修", "TRUE", "1", ""],
+    ["航空", "SAM", "Airman", "舊", "", "航空", "", "1", "Delete"],
+    ["高級航空", "SSA", "Senior Airman", "舊", "", "高級航空", "", "1", "Delete"],
+    ["優異航空", "SMA", "Master Airman", "舊", "", "優異航空", "", "1", "Delete"],
+    ["副舵手", "SCM", "Coxswain's Mate", "舊", "", "副舵手", "", "1", "Delete"],
+    ["舵手", "SCO", "Coxswain", "舊", "", "舵手", "", "2", "Delete"]
+  ];
+}
+
+function getMockGroupsData_() {
+  return [
+    ['G-001', '1', '第1旅（例子，請改成你區資料）', '請填團長姓名', 'group1@example.com', '', '請填地區', Utilities.formatDate(new Date(), 'Asia/Hong_Kong', 'yyyy-MM-dd')],
+    ['G-002', '2', '第2旅（例子，請改成你區資料）', '請填團長姓名', 'group2@example.com', '', '請填地區', Utilities.formatDate(new Date(), 'Asia/Hong_Kong', 'yyyy-MM-dd')]
+  ];
+}
+
+function getReadmeSheetData_() {
+  return [
+    ['項目', '說明'],
+    ['先做這 4 步', '1) 先執行 setupSystem() → 2) 通過 Google 權限授權 → 3) 回 Config 填黃底欄位 → 4) Deploy 為 Web App 拿 /exec URL'],
+    ['你要改的工作表（有顏色）', '黃色 Config：必填設定；綠色 Groups：填你區旅團資料；藍色 ExaminerMatrix：填主考 D / G。BadgeCodes 已預載最新章目，但預設隱藏，不用你手建。'],
+    ['Config 必填', 'DISTRICT_CODE、DISTRICT_NAME、EMAIL_REPLY_TO、ADC_EMAIL、STAFF_TOKEN、ADC_TOKEN。FRONTEND_URL 已預設平台網址，一般不用改。Deploy 後把 /exec URL 貼回 WEB_APP_URL。'],
+    ['Groups 怎樣填', '每列 1 位領袖 / 1 個旅團。例：group_id=G-001、group_number=1、group_name=第1旅、leader_name=陳大文、leader_email=group1@example.com'],
+    ['BadgeCodes 怎樣用', '已預載最新章目，預設隱藏，一般不用自己重建，也不用日常手改。新章正確做法＝貼平台更新檔 GS 並 Run 1 次。'],
+    ['ExaminerMatrix 怎樣填', 'A 欄=主考姓名，B 欄=單位（例如：第1旅），C 欄起每個章填 D 或 G。D=區主考，G=旅團主考。已有主考名單可直接批量填這張表，不用重新申請。'],
+    ['Examiner 三表關係', 'ExaminerMatrix = 人工維護主表；Examiners = 前端實際讀取名單；ExaminerAppointments = 新主考自行申請 / ADC 審批流程表。初始化現有名單請改 ExaminerMatrix，不是 ExaminerAppointments。'],
+    ['新章正確流程', '新章 = 貼平台提供的更新檔 GS + Run 1 次；如再改主考資格 = 改 ExaminerMatrix + 同步主考資料。'],
+    ['進階工作表', 'BadgeCodes、Applications、CertificateQueue、CertificatePrintList、AuditLog、ExaminerAppointments、Examiners 預設隱藏，因為一般不用手改；如要查看，可用選單顯示。'],
+    ['如何拿 URL', 'Apps Script 內按 Deploy → New deployment → 類型選 Web App → Who has access 選 Anyone → Deploy → 複製 /exec URL'],
+    ['如何通知平台接入', '把 /exec URL 貼到 Config 的 WEB_APP_URL，再到前端 /onboard 提交同一條 URL 給平台管理員。'],
+    ['健康檢查', '用瀏覽器打開：你的 /exec URL + ?action=getHealthCheck。看到 ready=true 才算完成。'],
+    ['固定版權', '© 2026 SKWSCOUT SYSTEM']
+  ];
+}
+
+function setSheetColorsAndVisibility_(ss) {
+  var visibleColors = {
+    'README_新手必看': '#8e24aa',
+    'Config': '#fbc02d',
+    'Groups': '#43a047',
+    'BadgeCodes': '#fb8c00',
+    'ExaminerMatrix': '#1e88e5'
+  };
+  Object.keys(visibleColors).forEach(function(name) {
+    var sh = ss.getSheetByName(name);
+    if (sh) sh.setTabColor(visibleColors[name]);
+  });
+
+  ['Applications', 'CertificateQueue', 'CertificatePrintList', 'AuditLog', 'ExaminerAppointments', 'Examiners'].forEach(function(name) {
+    var sh = ss.getSheetByName(name);
+    if (sh && !sh.isSheetHidden()) sh.hideSheet();
+  });
+}
+
+function buildExaminerMatrixHeader_(ss) {
+  var sh = ss.getSheetByName('ExaminerMatrix');
+  if (!sh) return;
+  var titles = getActiveFullTitles_();
+  if (titles.length === 0) return;
+  var header = ['姓名', '單位'].concat(titles);
+  var values = sh.getDataRange().getValues();
+  var hasRealHeader = values.length > 0 && values[0] && values[0][2];
+  if (!hasRealHeader) {
+    sh.clear();
+    sh.getRange(1, 1, 1, header.length).setValues([header]);
+    sh.setFrozenRows(1);
+    sh.setFrozenColumns(2);
+  }
+}
+
+function showAdvancedSheets() {
+  var ss = getSpreadsheet();
+  ['BadgeCodes', 'Applications', 'CertificateQueue', 'CertificatePrintList', 'AuditLog', 'ExaminerAppointments', 'Examiners'].forEach(function(name) {
+    var sh = ss.getSheetByName(name);
+    if (sh && sh.isSheetHidden()) sh.showSheet();
+  });
+  SpreadsheetApp.getUi().alert('已顯示進階工作表');
+}
+
+function hideAdvancedSheets() {
+  var ss = getSpreadsheet();
+  ['BadgeCodes', 'Applications', 'CertificateQueue', 'CertificatePrintList', 'AuditLog', 'ExaminerAppointments', 'Examiners'].forEach(function(name) {
+    var sh = ss.getSheetByName(name);
+    if (sh && !sh.isSheetHidden()) sh.hideSheet();
+  });
+  SpreadsheetApp.getUi().alert('已隱藏進階工作表');
 }
 
 // ============================================================
@@ -1755,7 +1976,7 @@ function setupSystem() {
 
   SpreadsheetApp.getUi().alert(
     'DBS 3.0 多區版初始化完成',
-    '已建立基本工作表及 Config 欄位。\n\n請下一步：\n1. 填寫 DISTRICT_CODE / DISTRICT_NAME\n2. 設定 EMAIL_REPLY_TO / ADC_EMAIL\n3. 設定 STAFF_TOKEN / ADC_TOKEN\n4. Deploy 為 Web App\n5. 測試 ?action=getHealthCheck',
+    '已建立基本工作表、最新 BadgeCodes、ExaminerMatrix 表頭及新手說明頁。\n\n請照以下順序做：\n1. 先到 README_新手必看 查看步驟\n2. 去黃色 Config 填 DISTRICT_CODE / DISTRICT_NAME / EMAIL_REPLY_TO / ADC_EMAIL / STAFF_TOKEN / ADC_TOKEN\n3. 去綠色 Groups 改成你區旅團資料\n4. 如有主考，去藍色 ExaminerMatrix 填 D / G\n5. 在 Apps Script 按 Deploy → New deployment → Web App → Anyone\n6. 複製 /exec URL，貼回 Config 的 WEB_APP_URL\n7. 用 /exec URL + ?action=getHealthCheck 測試，看到 ready=true 才算完成\n8. 把同一條 /exec URL 交給平台管理員接入',
     SpreadsheetApp.getUi().ButtonSet.OK
   );
 }
@@ -2041,12 +2262,15 @@ function lookupBadgeCodeFromSheet(ss, chineseName) {
 
 // S. 自訂選單
 function onOpen() {
-  SpreadsheetApp.getUi().createMenu('🏕️ 主考管理')
-    .addItem('🔄 同步主考資料（ExaminerMatrix → Examiners）', 'syncExaminerMatrix')
+  SpreadsheetApp.getUi().createMenu('🏕️ DBS 管理')
+    .addItem('🚀 重新執行初始化提示', 'setupSystem')
     .addSeparator()
+    .addItem('🔄 同步主考資料（ExaminerMatrix → Examiners）', 'syncExaminerMatrix')
     .addItem('✍️ 自動補 full_title（BadgeCodes 空白列）', 'autoComposeFullTitles')
     .addItem('🔧 重建 Matrix 表頭（依 BadgeCodes）', 'rebuildMatrixHeaderFromBadgeCodes')
     .addSeparator()
+    .addItem('👀 顯示進階工作表', 'showAdvancedSheets')
+    .addItem('🙈 隱藏進階工作表', 'hideAdvancedSheets')
     .addItem('📊 查看同步狀態', 'showSyncStatus')
     .addToUi();
 }
@@ -2871,7 +3095,8 @@ function apiGetHealthCheck() {
     var frontendUrl = String(getConfig('FRONTEND_URL') || '').trim();
     var staffToken = String(getConfig('STAFF_TOKEN') || '').trim();
     var adcToken = String(getConfig('ADC_TOKEN') || '').trim();
-    var webAppUrl = String(getConfig('WEB_APP_URL') || ScriptApp.getService().getUrl() || '').trim();
+    var webAppUrlConfig = String(getConfig('WEB_APP_URL') || '').trim();
+    var webAppUrl = webAppUrlConfig || String(ScriptApp.getService().getUrl() || '').trim();
 
     return {
       success: true,
@@ -2882,7 +3107,7 @@ function apiGetHealthCheck() {
       webAppUrl: webAppUrl,
       spreadsheetId: ss.getId(),
       spreadsheetName: ss.getName(),
-      ready: !!(districtCode && districtName && frontendUrl && staffToken && adcToken),
+      ready: !!(districtCode && districtName && frontendUrl && webAppUrlConfig && staffToken && adcToken),
       checks: {
         configSheet: checks.Config,
         groupsSheet: checks.Groups,
@@ -2894,7 +3119,7 @@ function apiGetHealthCheck() {
         districtCodeSet: !!districtCode,
         districtNameSet: !!districtName,
         frontendUrlSet: !!frontendUrl,
-        webAppUrlSet: !!webAppUrl,
+        webAppUrlSet: !!webAppUrlConfig,
         staffTokenSet: !!staffToken,
         adcTokenSet: !!adcToken
       }

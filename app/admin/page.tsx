@@ -476,17 +476,18 @@ function DbsHelp() {
             'BadgeCodes 是唯一真理。',
             'full_title 是章識別鑰匙（唯一）；badge_code 可重複（同章細分共用，用於證書編號，屬正確設計）。',
             'full_title 只在 BadgeCodes 填一次，其餘程式複製 → 全形/半形不會出錯。',
-            '報考只讀 Examiners；Matrix 是人看視圖。',
+            '報考只讀 Examiners；Matrix 是人工維護主表。',
           ]} />
           <HSub>新增專章 SOP</HSub>
           <HOl items={[
-            'BadgeCodes 最下加一列（active=TRUE）；一般章 full_title 可留空，細分章自填唯一 full_title。',
-            '選單「✍️ 自動補 full_title」。',
-            '選單「🔧 重建 Matrix 表頭」。',
+            '新章不建議各區自行手改 BadgeCodes，應使用平台提供的 patch 更新。',
+            '正確做法：貼上平台提供的更新檔 GS。',
+            '執行指定 patch function 1 次。',
+            '如之後要為現有主考加新章資格，請改 ExaminerMatrix，然後按「🔄 同步主考資料」。',
           ]} />
           <HSub>其他</HSub>
           <HUl items={[
-            '停用章：BadgeCodes 該列 active=FALSE。',
+            '新章更新：貼 patch GS → Run 1 次。',
             '取消主考某章：Matrix 清空該格 → 同步。',
             '重複行：確保姓名一致(含稱謂)、單位格式一致，再同步。',
           ]} />

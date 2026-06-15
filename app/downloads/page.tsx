@@ -53,6 +53,9 @@ export default function DownloadsPage() {
           <div style={{ color: '#666', fontSize: '13px', marginTop: '4px' }}>
             內容：setupSystem()、getHealthCheck、Config 初始化、d= 區碼 email links、證書及主考流程
           </div>
+          <div style={{ color: '#666', fontSize: '13px', marginTop: '4px' }}>
+            已包括：<strong>最新 BadgeCodes 預載（預設隱藏）</strong>、<strong>ExaminerMatrix 表頭自動建立</strong>、<strong>新手 README 工作表</strong>、<strong>進階工作表預設隱藏</strong>
+          </div>
 
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '16px' }}>
             <a href={TEMPLATE_PATH} download style={linkBtnStyle('#003366', 'white', 'none')}>

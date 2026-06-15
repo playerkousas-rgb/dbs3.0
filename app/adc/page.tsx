@@ -423,12 +423,12 @@ function MaintainDoc() {
         'BadgeCodes 是唯一真理（所有「章」的定義來源）。',
         'full_title 是全系統章識別鑰匙（唯一、不重複）；badge_code 可重複（同章細分共用，用於證書編號，屬正確設計）。',
         'full_title 只在 BadgeCodes 人手填一次，其餘由程式複製 → 全形/半形不會出錯。',
-        '報考系統只讀 Examiners 表；Matrix 只是人看的視圖。',
+        '報考系統只讀 Examiners 表；Matrix 是人工維護主表。',
       ]} />
       <DSub>主考相關工作表</DSub>
       <DUl items={[
         'BadgeCodes：章定義（badge_name, badge_code, category, full_title, active…）。',
-        'ExaminerMatrix：人看視圖，A=姓名 B=單位 C+=各章 full_title，格內 D/G/空白。',
+        'ExaminerMatrix：人工維護主表，A=姓名 B=單位 C+=各章 full_title，格內 D/G/空白。',
         'Examiners：機器讀真實來源；district_badges/group_badges 存 full_title 清單；unit 建議統一用「第XX旅」。',
         'ExaminerAppointments：申請暫存；notes 以「標籤：值 | …」存細節，含 badge_scopes(JSON)。',
         'Groups：旅團；申請存 group_id，寫入時由 normalizeUnit_ 轉為統一旅團名稱格式。',
@@ -442,8 +442,8 @@ function MaintainDoc() {
       ]} />
       <DSub>常見維護操作</DSub>
       <DOl items={[
-        '新增專章：BadgeCodes 加列(active=TRUE) → 選單「✍️ 自動補 full_title」→「🔧 重建 Matrix 表頭」。',
-        '停用某章：BadgeCodes 該列 active=FALSE。',
+        '新增專章：使用平台提供的更新檔 GS / patch。',
+        '新章正確流程：貼更新檔 GS → Run 1 次。',
         '取消某主考某章：ExaminerMatrix 清空該格 → 選單「🔄 同步」。',
         '主考重複行：確保 Matrix/Examiners 姓名一致(含稱謂)、單位格式一致，再同步。',
       ]} />
