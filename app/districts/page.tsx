@@ -9,18 +9,20 @@ import {
 export default function DistrictsPage() {
   const live = DISTRICT_LIST.filter(d => d.status === 'live');
   const testing = DISTRICT_LIST.filter(d => d.status === 'testing');
+  const disabled = DISTRICT_LIST.filter(d => d.status === 'disabled');
 
   return (
     <div style={{ display: 'grid', gap: '20px' }}>
       <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
         <h2 style={{ marginTop: 0, color: '#003366' }}>🌏 現已使用地區</h2>
         <p style={{ color: '#666', lineHeight: 1.7 }}>
-          此頁用作展示目前已接入或測試中的地區。若你所屬地區未在列表中，可把本平台資料轉發給區內負責人，邀請他們試用接入。
+          此頁用作展示目前已接入、測試中或暫停服務的地區。若你所屬地區未在列表中，可把本平台資料轉發給區內負責人，邀請他們試用接入。
         </p>
       </section>
 
       <Section title="已開通使用" emptyText="目前尚未有已開通地區。" items={live} />
       <Section title="測試中" emptyText="目前沒有測試中地區。" items={testing} />
+      <Section title="暫停服務" emptyText="目前沒有暫停服務地區。" items={disabled} />
 
       <section style={{ background: '#f7fafc', padding: '24px', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
         <h3 style={{ marginTop: 0, color: '#003366' }}>你的地區尚未接入？</h3>

@@ -7,6 +7,7 @@ import {
   DistrictCode,
   getDistrictStatusColor,
   getDistrictStatusLabel,
+  isDistrictAvailable,
   setStoredDistrictCode,
 } from '@/lib/district';
 
@@ -37,6 +38,7 @@ export default function DistrictPicker({
   }, [pathname, searchParams]);
 
   const pick = (code: DistrictCode) => {
+    if (!isDistrictAvailable(code)) return;
     setStoredDistrictCode(code);
     onPicked?.(code);
     if (!redirectToCurrentPath) return;
@@ -60,17 +62,20 @@ export default function DistrictPicker({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', marginTop: '18px' }}>
         {DISTRICT_LIST.map((district) => {
           const color = getDistrictStatusColor(district.status);
+          const disabled = district.status === 'disabled';
           return (
             <button
               key={district.code}
               onClick={() => pick(district.code as DistrictCode)}
+              disabled={disabled}
               style={{
                 textAlign: 'left',
-                background: '#f9fbff',
-                border: '1px solid #d8e4f0',
+                background: disabled ? '#fafafa' : '#f9fbff',
+                border: `1px solid ${disabled ? '#e7d5d5' : '#d8e4f0'}`,
                 borderRadius: '12px',
                 padding: '16px',
-                cursor: 'pointer',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                opacity: disabled ? 0.8 : 1,
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -88,7 +93,7 @@ export default function DistrictPicker({
               </div>
               <div style={{ fontSize: '13px', color: '#555' }}>區碼：{district.code}</div>
               <div style={{ fontSize: '13px', color: '#777', marginTop: '6px', lineHeight: 1.5 }}>
-                {district.note || '已接入此平台，可直接進行報考、查詢及主考申請。'}
+                {district.note || (disabled ? '此區目前未開放使用。' : '已接入此平台，可直接進行報考、查詢及主考申請。')}
               </div>
             </button>
           );

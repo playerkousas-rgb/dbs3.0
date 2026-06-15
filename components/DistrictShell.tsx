@@ -4,19 +4,23 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import DistrictPicker from '@/components/DistrictPicker';
+import DistrictUnavailableNotice from '@/components/DistrictUnavailableNotice';
 import {
   DISTRICT_LIST,
   PLATFORM_COPYRIGHT,
   PLATFORM_NAME,
   clearStoredDistrictCode,
   getDistrictInfo,
+  getDistrictLockMessage,
+  getDistrictStatusLabel,
+  isDistrictAvailable,
   isDistrictCode,
   setStoredDistrictCode,
   withDistrictParam,
 } from '@/lib/district';
 import { useDistrict } from '@/lib/useDistrict';
 
-const PUBLIC_PATHS = ['/', '/setup', '/onboard', '/districts', '/guide'];
+const PUBLIC_PATHS = ['/', '/setup', '/onboard', '/districts', '/guide', '/downloads', '/updates'];
 
 const navItems = [
   { href: '/apply', label: '📝 報考' },
@@ -39,12 +43,19 @@ export default function DistrictShell({ children }: { children: React.ReactNode 
   const { district, districtCode, hasDistrict, withDistrict } = useDistrict();
 
   const isPublicPath = PUBLIC_PATHS.includes(pathname) || pathname.startsWith('/admin/print-cert/');
+  const districtDisabled = !!districtCode && !isDistrictAvailable(districtCode);
   const currentTitle = district ? `${district.name}專科徽章管理系統` : PLATFORM_NAME;
-
   const currentQuery = useMemo(() => searchParams.toString(), [searchParams]);
 
   const changeDistrict = (nextCode: string) => {
     if (!isDistrictCode(nextCode)) return;
+    if (!isDistrictAvailable(nextCode)) {
+      setStoredDistrictCode(nextCode);
+      const params = new URLSearchParams(currentQuery);
+      params.set('d', nextCode);
+      router.push(`${pathname}?${params.toString()}`);
+      return;
+    }
     setStoredDistrictCode(nextCode);
     const params = new URLSearchParams(currentQuery);
     params.set('d', nextCode);
@@ -70,7 +81,9 @@ export default function DistrictShell({ children }: { children: React.ReactNode 
               🏕️ {currentTitle}
             </Link>
             <div style={{ fontSize: '12px', color: '#bbdefb', marginTop: '4px' }}>
-              {district ? `目前地區：${district.name} (${district.code})` : '未選擇地區'}
+              {district
+                ? `目前地區：${district.name} (${district.code}) · ${getDistrictStatusLabel(district.status)}`
+                : '未選擇地區'}
             </div>
           </div>
 
@@ -89,7 +102,9 @@ export default function DistrictShell({ children }: { children: React.ReactNode 
             >
               <option value="">選擇地區...</option>
               {DISTRICT_LIST.map(d => (
-                <option key={d.code} value={d.code}>{d.name} ({d.code})</option>
+                <option key={d.code} value={d.code}>
+                  {d.name} ({d.code}){d.status === 'disabled' ? '・暫停' : d.status === 'testing' ? '・測試中' : ''}
+                </option>
               ))}
             </select>
             {districtCode && (
@@ -120,7 +135,12 @@ export default function DistrictShell({ children }: { children: React.ReactNode 
       </header>
 
       <main style={{ maxWidth: '1040px', margin: '0 auto', padding: '24px' }}>
-        {districtGateNeeded ? (
+        {districtDisabled ? (
+          <DistrictUnavailableNotice
+            districtName={district?.name}
+            message={getDistrictLockMessage(districtCode)}
+          />
+        ) : districtGateNeeded ? (
           <div style={{ maxWidth: '720px', margin: '0 auto' }}>
             <DistrictPicker
               title="這個功能需要先選擇地區"
