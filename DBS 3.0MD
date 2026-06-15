@@ -1,0 +1,268 @@
+DBS 3.0 多區版 — 新 Repo / 假前端佔位說明
+用途：
+這份文件是給 DBS 3.0 多區版 開新 Git Repo / 新 Vercel 專案時作為佔位用途。
+現階段先不搬正式功能，只先建立一個清晰的多區版方向、首頁文案、保留頁面與後續開發規格。
+
+之後待正式 3.0 前端網址與最新 backend 規格確定後，再開始實作。
+
+1. 專案定位
+DBS 3.0 多區版是一個：
+
+統一前端
+多區後端（每區一份 Google Sheet + Apps Script）
+由平台管理員手動維護區碼與 Apps Script URL mapping
+給不同區會複製使用的專科徽章系統平台
+核心原則
+首頁先選區
+記住區碼
+全站 URL 帶 d=
+前端維護 district mapping（不是直接暴露 Apps Script URL）
+各區只需：開空白 Google Sheet → 貼 GS → Run 初始化 → Deploy → 把 URL 交回平台管理員
+平台版權固定歸屬 SKW
+2. 版權與署名（固定，不可改）
+多區版前端、教學頁、接入頁、頁尾、README 及相關公開文件，統一保留：
+
+text
+
+© 2026 SKWSCOUT SYSTEM
+說明
+此項為固定值，不交由各區在 Config 自行修改。
+
+原因：
+
+系統屬於 SKW 建立與維護
+多區共用，但設計與平台功勞需保留原始來源
+可方便其他區使用，但不應變成各區自行署名為原創系統
+顯示原則
+區名可以因應 d= 動態改變
+但頁尾 copyright 固定為：
+text
+
+© 2026 SKWSCOUT SYSTEM
+3. 這個新 Repo 現階段要做什麼？
+目標
+先開一個新的 Git Repo 及 Vercel 專案，用作：
+
+保留多區版網址
+建立對外說明頁
+先放假前端 / 佔位頁
+日後再接入真正 DBS 3.0 多區功能
+現階段不做
+不搬完整 DBS 功能
+不接正式 Apps Script API
+不接正式 district mapping
+不處理真實報考資料
+不做後台
+4. 建議 Repo 名稱
+可考慮以下其中一個：
+
+dbs-multi-district
+dbs-3-multidistrict
+skw-dbs-platform
+dbs-next-platform
+如想保持簡潔，建議：
+
+text
+
+dbs-multi-district
+5. 建議 Vercel 專案用途
+新 Vercel 專案先作以下用途：
+
+多區版佔位網址
+對外展示「系統即將推出 / 正在測試」
+提供「區接入教學」入口
+提供「提交接入 URL」入口（現階段可先用 mailto）
+提供「現已使用地區」展示頁
+6. 假前端階段建議頁面
+現階段建議先建立以下頁面：
+
+/
+首頁（佔位）
+
+/setup
+區接入教學
+
+/onboard
+提交區接入 URL
+
+/districts
+現已使用地區
+
+/about
+關於此平台（可選）
+
+7. 假前端首頁建議文案
+以下可直接作首頁內容：
+
+DBS 3.0 多區專科徽章平台
+本平台為 SKWSCOUT SYSTEM 建立之多區專科徽章管理系統。
+
+現正進行多區版部署與接入準備。
+
+未來各區只需：
+
+建立空白 Google Sheet
+貼上標準 GS 檔
+執行初始化
+部署 Apps Script Web App
+把 URL 提交予平台管理員
+即可接入系統。
+
+現階段開放內容
+區接入教學
+區接入申請
+已接入地區展示
+正式多區功能將於 DBS 3.0 多區版完成後逐步開放。
+
+頁底固定：
+
+text
+
+© 2026 SKWSCOUT SYSTEM
+8. /setup 頁應顯示什麼
+標題
+區接入教學
+
+內容重點
+A. 你需要準備
+一個 Google 帳號
+一個空白 Google Sheet
+區名
+區碼（建議 3-4 個英文字）
+聯絡電郵
+群組資料
+主考資料（如適用）
+B. 接入步驟
+建立空白 Google Sheet
+開啟 Apps Script
+貼上標準 GS 檔
+Run setupSystem()
+填寫 Config
+部署為 Web App
+測試 getHealthCheck
+到 /onboard 提交 URL
+C. 更新說明
+如平台日後發佈新章 / 小更新：
+
+只需貼上更新 GS patch
+Run 指定更新函數
+不更新通常不會令系統失效
+但新章可能未能使用
+D. 注意事項
+Copyright 固定保留 SKWSCOUT SYSTEM
+各區只負責本區資料與 Apps Script 部署
+多區前端 mapping 由平台管理員統一維護
+9. /onboard 頁應顯示什麼
+標題
+提交區接入申請
+
+欄位
+區名稱
+區碼
+聯絡人姓名
+聯絡人 Email
+Apps Script Web App URL
+備註（可選）
+送出方式
+現階段採用：
+
+text
+
+mailto:ai@skwscout.org.hk
+主旨格式建議
+text
+
+[DBS 區接入申請] {區名稱} ({區碼})
+內容格式建議
+text
+
+區名稱：
+區碼：
+聯絡人姓名：
+聯絡人 Email：
+Apps Script Web App URL：
+備註：
+10. /districts 頁應顯示什麼
+用途
+讓其他成員知道目前已有哪些區正在使用 / 測試此系統。
+
+建議分組
+已開通使用
+筲箕灣區（示例）
+測試中
+可日後加入其他區
+準備接入
+可留空或顯示「歡迎各區申請接入」
+額外說明
+此頁同時可作宣傳用途，讓使用者主動通知自己所屬地區試用。
+
+11. 多區正式版的未來架構（先記錄，暫不實作）
+前端
+首頁選區
+localStorage 記住區碼
+URL 全站帶 d=
+lib/district.ts 維護 mapping
+根據 d= 選擇 Apps Script backend
+Backend
+各區自備 Google Sheet + Apps Script
+GS 需支援一鍵初始化
+GS 提供 getHealthCheck
+GS 由 Config 控制區名、區碼、token、前端網址
+管理方式
+各區提交 URL 給平台管理員
+平台管理員檢查 health check
+平台管理員加入 mapping
+redeploy 前端
+回覆該區「已開通可測試」
+12. GS 派發版未來必備條件（備忘）
+正式開始實作時，GS 應至少支援：
+
+setupSystem()
+getHealthCheck
+DISTRICT_CODE
+DISTRICT_NAME
+FRONTEND_URL
+STAFF_TOKEN
+ADC_TOKEN
+Email links 自動帶 d=
+Application ID 與證書號不再寫死 SKW，而由 Config 組成
+Copyright 保持前端固定，不交區端改動
+13. 現階段 Git 首版可放什麼
+建議第一版只放：
+
+一個簡單首頁
+/setup
+/onboard
+/districts
+README
+清楚寫明「DBS 3.0 多區版建置中」
+好處
+先佔 repo / 網址 / Vercel 位置
+之後正式開發時不會混淆現有穩定版
+可與現有 2.0 穩定版並行
+14. 建議 README 首句
+可直接用：
+
+Markdown
+
+DBS 3.0 多區版正在建立中。本專案為 SKWSCOUT SYSTEM 的多區專科徽章平台前端，現階段先提供區接入教學、接入申請及已接入地區資訊。
+15. 下一步（待正式開始開發時）
+當新 Repo 與新 Vercel 佔位完成後，下一階段再提供：
+
+正式 3.0 前端網址
+新 repo 位置
+最新 Apps Script 多區派發版
+district mapping 首批名單
+之後再開始實作：
+
+首頁選區
+lib/district.ts
+假前端改正式骨架
+setup / onboard / districts 真頁面
+GS health check 對接
+16. 固定結語
+本平台由 SKWSCOUT SYSTEM 建立與維護，歡迎各區使用及接入。
+
+text
+
+© 2026 SKWSCOUT SYSTEM
