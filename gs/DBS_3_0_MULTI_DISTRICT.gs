@@ -2050,16 +2050,30 @@ function setupSystem() {
 
   SpreadsheetApp.getUi().alert(
     'DBS 3.0 多區版初始化完成',
-    '已建立基本工作表、最新 BadgeCodes、ExaminerMatrix 表頭及新手說明頁。\n\n請照以下順序做：\n1. 先到 README_新手必看 查看步驟\n2. 去黃色 Config 填 DISTRICT_CODE / DISTRICT_NAME / EMAIL_REPLY_TO / ADC_EMAIL / STAFF_TOKEN / ADC_TOKEN\n3. 去綠色 Groups 改成你區旅團資料\n4. 如有主考，去藍色 ExaminerMatrix 填 D / G\n5. Deploy 為 Web App（Anyone）→ 複製 /exec URL\n6. 到前端「申請接入」頁面，填入 /exec URL 和下面的 API Key\n7. 等平台管理員開通\n\n'
-    + '🔑 你的 API Key（只顯示一次，請即複製）：\n'
-    + '───────────────────────\n'
-    + (apiKeyPlain || '（已在 Config 設定）') + '\n'
-    + '───────────────────────\n\n'
-    + '⚠️ 複製時只取上下橫線之間的文字，不要包含空格或換行！\n'
-    + 'Config 只儲存此 Key 的雜湊值，無法還原。\n'
-    + '忘記了？到選單 → 重新生成 API Key。',
+    '已建立基本工作表、最新 BadgeCodes、ExaminerMatrix 表頭及新手說明頁。\n\n'
+    + '請照以下順序做：\n'
+    + '1. 先到 README_新手必看 查看步驟\n'
+    + '2. 去黃色 Config 填 DISTRICT_CODE / DISTRICT_NAME / STAFF_TOKEN / ADC_TOKEN\n'
+    + '3. 去綠色 Groups 改成你區旅團資料\n'
+    + '4. Deploy 為 Web App（Anyone）→ 複製 /exec URL\n'
+    + '5. 到前端「申請接入」頁面，填入 /exec URL 和下面的 API Key\n'
+    + '6. 等平台管理員開通',
     SpreadsheetApp.getUi().ButtonSet.OK
   );
+
+  if (apiKeyPlain) {
+    SpreadsheetApp.getUi().alert(
+      '🔑 你的 API Key（只顯示一次）',
+      '───────────────────────\n'
+      + apiKeyPlain
+      + '\n───────────────────────\n\n'
+      + '⚠️ 複製時只取上下橫線之間的文字！\n'
+      + 'Config 只存雜湊值，無法還原。\n'
+      + '忘記了？到選單 → 重新生成 API Key。',
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+  }
+
 
 }
 

@@ -14,22 +14,40 @@ export interface DistrictInfo {
   maintenanceMessage?: string;
 }
 
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  新區接入 — 你要做 2 件事：                                      ║
+// ║  1. 在下面 DISTRICTS 加入新區（code, name, apiBase, status）       ║
+// ║  2. 在 Vercel Dashboard → Settings → Environment Variables 加：   ║
+// ║     DBS_{區碼}_APIKEY = 區方提交的 API Key                        ║
+// ║     例如區碼 CHW → 設 DBS_CHW_APIKEY=ak_xxxxxxxx                 ║
+// ║  3. git push → Vercel 自動部署                                    ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
 export const DISTRICTS = {
   SKW: {
     code: 'SKW',
     name: '筲箕灣區',
     apiBase: 'https://script.google.com/macros/s/AKfycby9YxshCODYJKymkCD6IuiMiKHswQDySswQPsDC36SLN55XQEdtn_Ik_ja1ES_g7l0/exec',
     status: 'live',
-    note: '首個已接入及實際使用區。',
+    note: '首個已接入及實際使用區。Vercel env: DBS_SKW_APIKEY',
   },
-  // 例子：如日後需要鎖區，只需改 status 為 disabled
+  // ──────────────────────────────────────────────
+  // 新區接入：複製以下模板，取消注釋，填入實際資料
+  // ──────────────────────────────────────────────
   // CHW: {
   //   code: 'CHW',
   //   name: '柴灣區',
   //   apiBase: 'https://script.google.com/macros/s/.../exec',
-  //   status: 'disabled',
-  //   note: '暫停服務中。',
-  //   maintenanceMessage: '此區目前暫停使用本平台。如有需要，請自行另行構建或聯絡平台管理員。',
+  //   status: 'live',         // live=已開通, testing=測試中, disabled=暫停
+  //   note: 'Vercel env: DBS_CHW_APIKEY',
+  // },
+  // HKI: {
+  //   code: 'HKI',
+  //   name: '香港島區',
+  //   apiBase: 'https://script.google.com/macros/s/.../exec',
+  //   status: 'disabled',     // 如需鎖區，改 status 為 disabled
+  //   note: '暫停服務',
+  //   maintenanceMessage: '此區目前暫停使用本平台。如有需要，請留意區方通知。',
   // },
 } as const satisfies Record<string, DistrictInfo>;
 
