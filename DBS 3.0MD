@@ -17,7 +17,7 @@ DBS 3.0 多區版是一個：
 記住區碼
 全站 URL 帶 d=
 前端維護 district mapping（不是直接暴露 Apps Script URL）
-各區只需：開空白 Google Sheet → 貼 GS → Run 初始化 → Deploy → 把 URL 交回平台管理員
+各區只需：開空白 Google Sheet → 貼 GS → Run 初始化（複製 API Key）→ Deploy → 把 URL + API Key 提交給平台管理員
 平台版權固定歸屬 SKW
 2. 版權與署名（固定，不可改）
 多區版前端、教學頁、接入頁、頁尾、README 及相關公開文件，統一保留：
@@ -103,10 +103,11 @@ DBS 3.0 多區專科徽章平台
 
 建立空白 Google Sheet
 貼上標準 GS 檔
-執行初始化
+執行初始化（彈窗會顯示 API Key，只顯示一次！立即複製）
 部署 Apps Script Web App
-把 URL 提交予平台管理員
-即可接入系統。
+到 /onboard 提交 URL + API Key
+等平台管理員開通
+即可使用系統。
 
 現階段開放內容
 區接入教學
@@ -162,6 +163,7 @@ Copyright 固定保留 SKWSCOUT SYSTEM
 聯絡人姓名
 聯絡人 Email
 Apps Script Web App URL
+API Key（setup 彈窗只顯示一次，忘記了請到 Sheet 選單 → 重新生成 API Key）
 備註（可選）
 送出方式
 現階段採用：
@@ -181,6 +183,7 @@ text
 聯絡人姓名：
 聯絡人 Email：
 Apps Script Web App URL：
+API Key：
 備註：
 10. /districts 頁應顯示什麼
 用途
@@ -214,7 +217,25 @@ GS 由 Config 控制區名、區碼、token、前端網址
 平台管理員加入 mapping
 redeploy 前端
 回覆該區「已開通可測試」
-12. GS 派發版未來必備條件（備忘）
+12. 安全架構（API Key）
+資料安全
+各區的資料存在 Google 伺服器（Google Sheet），不是某台不知名的電腦。
+API Key 安全
+各區的 API Key 只存在 Vercel 伺服器環境變數（DBS_{區碼}_APIKEY），不出現在任何前端代碼。
+Google Sheet 只存 API Key 的 SHA-256 雜湊值（API_KEY_HASH），連管理員也無法還原明文。
+攻擊門檻
+要取得某區的資料，攻擊者要麼攻破 Google 伺服器，要麼攻破 Vercel 伺服器。比存在自己家裡的電腦更安全。
+管理員工作流程
+收到區接入申請（含 URL + API Key）
+用 health + apiKey 測試連線
+在 district.ts 加入區 mapping
+在 Vercel 設定環境變數 DBS_{區碼}_APIKEY
+Redeploy
+回覆區方已開通
+區方忘記 API Key
+到 Sheet 選單 → 🏕️ DBS 管理 → 🔑 重新生成 API Key → 把新 Key 交給管理員 → 更新 Vercel env var → Redeploy
+
+13. GS 派發版未來必備條件（備忘）
 正式開始實作時，GS 應至少支援：
 
 setupSystem()
@@ -227,7 +248,7 @@ ADC_TOKEN
 Email links 自動帶 d=
 Application ID 與證書號不再寫死 SKW，而由 Config 組成
 Copyright 保持前端固定，不交區端改動
-13. 現階段 Git 首版可放什麼
+14. 現階段 Git 首版可放什麼
 建議第一版只放：
 
 一個簡單首頁
@@ -240,13 +261,13 @@ README
 先佔 repo / 網址 / Vercel 位置
 之後正式開發時不會混淆現有穩定版
 可與現有 2.0 穩定版並行
-14. 建議 README 首句
+15. 建議 README 首句
 可直接用：
 
 Markdown
 
 DBS 3.0 多區版正在建立中。本專案為 SKWSCOUT SYSTEM 的多區專科徽章平台前端，現階段先提供區接入教學、接入申請及已接入地區資訊。
-15. 下一步（待正式開始開發時）
+16. 下一步（待正式開始開發時）
 當新 Repo 與新 Vercel 佔位完成後，下一階段再提供：
 
 正式 3.0 前端網址
@@ -260,7 +281,7 @@ lib/district.ts
 假前端改正式骨架
 setup / onboard / districts 真頁面
 GS health check 對接
-16. 固定結語
+17. 固定結語
 本平台由 SKWSCOUT SYSTEM 建立與維護，歡迎各區使用及接入。
 
 text

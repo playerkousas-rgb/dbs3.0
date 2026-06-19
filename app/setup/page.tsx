@@ -16,20 +16,21 @@ const configItems = [
   { key: 'DISTRICT_NAME', note: '必填，例如 柴灣區' },
   { key: 'EMAIL_REPLY_TO', note: '必填，秘書通知 Email' },
   { key: 'ADC_EMAIL', note: '必填，ADC 主考申請通知 Email' },
-  { key: 'STAFF_TOKEN', note: '必填，秘書後台密鑰' },
-  { key: 'ADC_TOKEN', note: '必填，ADC 審批密鑰' },
-  { key: 'FRONTEND_URL', note: '已預設平台網址，一般不用改' },
-  { key: 'WEB_APP_URL', note: 'Deploy 後把 /exec URL 貼回此欄，再用這條 URL 提交接入' },
+  { key: 'STAFF_TOKEN', note: '必填，秘書後台密鑰（請立即更改）' },
+  { key: 'ADC_TOKEN', note: '必填，ADC 審批密鑰（請立即更改）' },
+  { key: 'FRONTEND_URL', note: '已預設平台網址，不用改' },
+  { key: 'WEB_APP_URL', note: 'Deploy 後把 /exec URL 貼回此欄' },
+  { key: 'API_KEY_HASH', note: 'setup 自動生成，不要修改' },
 ];
 
 export default function SetupPage() {
   return (
     <div style={{ display: 'grid', gap: '20px' }}>
       <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
-        <h2 style={{ marginTop: 0, color: '#003366' }}>🧩 區接入教學（小白版）</h2>
+        <h2 style={{ marginTop: 0, color: '#003366' }}>🧩 區接入教學</h2>
         <p style={{ color: '#666', lineHeight: 1.8 }}>
           這個平台採用「統一前端 + 各區獨立 Google Sheet / Apps Script 後台」模式。<br />
-          換句話說：你這一區不用寫前端程式，只要照步驟建立自己區的 Sheet 後台，再把 <strong>Web App /exec URL</strong> 交回平台管理員即可接入。
+          你不用寫前端程式，只要照步驟建立自己區的 Sheet 後台，再把 <strong>/exec URL 和 API Key</strong> 提交給平台管理員即可接入。
         </p>
       </section>
 
@@ -49,6 +50,7 @@ export default function SetupPage() {
           <li>把模板內容整份貼上，儲存。</li>
           <li>在函數列表選擇 <code>setupSystem</code>，然後按 Run。</li>
           <li>Google 會要求授權：請按 <strong>Review permissions → 選擇你的帳戶 → Advanced → Go to project → Allow</strong>。</li>
+          <li>⚠️ <strong>彈窗會顯示你的 API Key（只顯示一次！請立即複製！）</strong></li>
           <li>跑完後，回到 Google Sheet，你會看到：
             <ul style={{ marginTop: '8px', paddingLeft: '20px', lineHeight: 1.8 }}>
               <li><strong>README_新手必看</strong>（紫色）</li>
@@ -61,8 +63,7 @@ export default function SetupPage() {
           <li>先打開 <strong>README_新手必看</strong>，再到黃色 <strong>Config</strong> 按指示填資料。</li>
           <li>再到綠色 <strong>Groups</strong> 把例子資料改成你區真正旅團資料。</li>
           <li>如你區<strong>本身已有主考名單</strong>，請直接把主考資料批量填到藍色 <strong>ExaminerMatrix</strong>，不用叫他們重新申請。</li>
-          <li><strong>ExaminerAppointments 只用於之後新主考自行申請</strong>，不是初始化主考名單的地方。</li>
-          <li>當你填好 ExaminerMatrix 後，可用選單：<code>🏕️ DBS 管理 → 🔄 同步主考資料（ExaminerMatrix → Examiners）</code>，讓前端讀取用的 Examiners 自動同步。</li>
+          <li>當你填好 ExaminerMatrix 後，可用選單：<code>🏕️ DBS 管理 → 🔄 同步主考資料</code>，讓前端讀取用的 Examiners 自動同步。</li>
           <li>回到 Apps Script，按：<strong>Deploy → New deployment → 類型選 Web App</strong>。</li>
           <li>設定：
             <ul style={{ marginTop: '8px', paddingLeft: '20px', lineHeight: 1.8 }}>
@@ -70,20 +71,9 @@ export default function SetupPage() {
               <li><strong>Who has access：</strong> Anyone</li>
             </ul>
           </li>
-          <li>按 Deploy 後，Google 會給你一條 <strong>/exec URL</strong>。</li>
-          <li>把這條 <strong>/exec URL</strong>：
-            <ul style={{ marginTop: '8px', paddingLeft: '20px', lineHeight: 1.8 }}>
-              <li>貼回黃色 Config 的 <code>WEB_APP_URL</code></li>
-              <li>稍後亦用這條 URL 提交給平台管理員接入</li>
-            </ul>
-          </li>
-          <li>用瀏覽器打開：<br />
-            <code style={{ display: 'inline-block', marginTop: '6px', background: '#f5f5f5', padding: '6px 10px', borderRadius: '6px' }}>
-              你的 /exec URL + ?action=getHealthCheck
-            </code>
-          </li>
-          <li>當你看到 <strong>ready = true</strong>，代表設定完成。</li>
-          <li>最後到 <strong>/onboard</strong>，把同一條 <strong>/exec URL</strong> 提交給平台管理員接入。</li>
+          <li>按 Deploy 後，複製 <strong>/exec URL</strong>，貼回黃色 Config 的 <code>WEB_APP_URL</code>。</li>
+          <li>到前端 <strong>/onboard</strong>，填入區名、區碼、/exec URL、<strong>API Key</strong>，提交給平台管理員。</li>
+          <li>等平台管理員開通，即可使用。</li>
         </ol>
       </section>
 
@@ -97,6 +87,17 @@ export default function SetupPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
+        <h3 style={{ marginTop: 0, color: '#003366' }}>🛡️ 你的資料有多安全？</h3>
+        <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.85, color: '#444' }}>
+          <li>你的資料存在 <strong>Google 伺服器</strong>（Google Sheet），不是某台不知名的電腦</li>
+          <li>API Key 只存在 <strong>Vercel 伺服器環境變數</strong>，不會出現在任何前端代碼</li>
+          <li>Config 只存 API Key 的雜湊值（API_KEY_HASH），連管理員也無法還原明文</li>
+          <li>要取得你的資料，攻擊者要麼攻破 Google 伺服器，要麼攻破 Vercel 伺服器</li>
+          <li>這比把資料存在自己家裡的電腦更安全</li>
+        </ul>
       </section>
 
       <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
@@ -117,8 +118,9 @@ export default function SetupPage() {
       <section style={{ background: '#fff8e1', padding: '24px', borderRadius: '16px', border: '1px solid #f0d98a' }}>
         <h3 style={{ marginTop: 0, color: '#8d6e00' }}>重要提醒</h3>
         <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.85, color: '#6d4c41' }}>
-          <li><strong>FRONTEND_URL 已預設平台網址，一般不要改。</strong></li>
-          <li><strong>WEB_APP_URL 不是自動交給平台管理員的。</strong> 你仍需要把 deploy 後的 /exec URL 貼回 Config，然後用同一條 URL 到 /onboard 提交。</li>
+          <li><strong>FRONTEND_URL 已預設平台網址，不用改。</strong></li>
+          <li>Deploy 後把 /exec URL 貼回 Config 的 WEB_APP_URL，再到 <strong>/onboard</strong> 提交 /exec URL 和 API Key。</li>
+          <li>API Key 在 setup 彈窗只顯示一次。忘記了？到 Sheet 選單 → 重新生成 API Key。</li>
           <li>前端 district mapping 由平台管理員統一維護。</li>
           <li>各區只需維護本區 Google Sheet / Apps Script 及資料內容。</li>
           <li>平台版權固定保留，不屬各區自行更改項目。</li>

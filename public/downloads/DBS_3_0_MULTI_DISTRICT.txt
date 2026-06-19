@@ -84,6 +84,7 @@ function initializeSheets(ss) {
         ['FRONTEND_URL', CONFIG.DEFAULT_FRONTEND_URL, '前端網址（已預設平台網址，一般不用改）'],
         ['STAFF_TOKEN', 'change-this-staff-token', '【必填】秘書後台密鑰（請立即更改）'],
         ['ADC_TOKEN', 'change-this-adc-token', '【必填】ADC 審批密鑰（請立即更改）'],
+        ['API_KEY_HASH', '', 'setup 自動生成；API_KEY 的 SHA-256 雜湊值，用於驗證前端請求。明文不會儲存在此。'],
         ['CERT_SIGNER_TITLE_CN', '助理區總監(童軍)', '證書簽發人中文'],
         ['CERT_SIGNER_TITLE_EN', 'Assistant District Commissioner (Scouts)', '證書簽發人英文'],
         ['CERT_SIGNER_LABEL_CN', '助理區總監(童軍)', '證書中文職銜'],
@@ -303,7 +304,12 @@ function getReadmeSheetData_() {
     ['新章正確流程', '新章 = 貼平台提供的更新檔 GS + Run 1 次；如再改主考資格 = 改 ExaminerMatrix + 同步主考資料。'],
     ['進階工作表', 'BadgeCodes、Applications、CertificateQueue、CertificatePrintList、AuditLog、ExaminerAppointments、Examiners 預設隱藏，因為一般不用手改；如要查看，可用選單顯示。'],
     ['如何拿 URL', 'Apps Script 內按 Deploy → New deployment → 類型選 Web App → Who has access 選 Anyone → Deploy → 複製 /exec URL'],
-    ['如何通知平台接入', '把 /exec URL 貼到 Config 的 WEB_APP_URL，再到前端 /onboard 提交同一條 URL 給平台管理員。'],
+    ['如何通知平台接入', '把 /exec URL 和 API Key 一起提交到前端「申請接入」頁面。API Key 在 setup 彈窗只顯示一次，忘記了請用選單 → 重新生成 API Key。'],
+    ['🛡️ 你的資料有多安全？', ''],
+    ['資料存放在哪？', 'Google 伺服器（Google Sheet），不是某台不知名的電腦。'],
+    ['API Key 存放在哪？', 'Vercel 伺服器環境變數，不出現在任何前端代碼。'],
+    ['Config 存了甚麼？', '只有 API Key 的 SHA-256 雜湊值（API_KEY_HASH），連管理員也無法還原。'],
+    ['攻擊門檻', '要取得你的資料，攻擊者要麼攻破 Google 伺服器，要麼攻破 Vercel 伺服器。比存在自己家裡的電腦更安全。'],
     ['健康檢查', '用瀏覽器打開：你的 /exec URL + ?action=getHealthCheck。看到 ready=true 才算完成。'],
     ['固定版權', '© 2026 SKWSCOUT SYSTEM']
   ];
@@ -588,6 +594,13 @@ function setAppCell(sheet, rowIndex, headers, colName, value) {
 // ============================================================
 
 function doGet(e) {
+  // ★ API Key 認證
+  var requiredApiKeyHash = getConfig('API_KEY_HASH');
+  if (requiredApiKeyHash) {
+    if (sha256_(e.parameter.apiKey || '') !== requiredApiKeyHash) {
+      return ContentService.createTextOutput(JSON.stringify({success:false,error:'Unauthorized: invalid or missing apiKey'})).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
   var action = e.parameter.action;
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
@@ -612,7 +625,14 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  // ★ API Key 認證
   var data = JSON.parse(e.postData.contents);
+  var requiredApiKeyHash = getConfig('API_KEY_HASH');
+  if (requiredApiKeyHash) {
+    if (sha256_(data.apiKey || '') !== requiredApiKeyHash) {
+      return ContentService.createTextOutput(JSON.stringify({success:false,error:'Unauthorized: invalid or missing apiKey'})).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
   var action = data.action;
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
@@ -1956,6 +1976,57 @@ function dailyAutomation() {
 }
 
 // P. 系統初始化
+/** SHA-256 雜湊（用於 API_KEY 驗證，不存明文） */
+function sha256_(str) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, str);
+  return digest.map(function(b) { return ('0' + (b & 0xFF).toString(16)).slice(-2); }).join('');
+}
+
+/** 生成 API Key（只存 hash 到 Config） */
+function generateApiKey_(ss) {
+  var sh = ss.getSheetByName('Config');
+  if (!sh) return '';
+  var values = sh.getDataRange().getValues();
+  var generatedKey = '';
+  for (var i = 1; i < values.length; i++) {
+    var key = String(values[i][0] || '').trim();
+    if (key === 'API_KEY_HASH' && !values[i][1]) {
+      generatedKey = 'ak_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+      sh.getRange(i + 1, 2).setValue(sha256_(generatedKey));
+      sh.getRange(i + 1, 3).setValue('setup 自動生成；API_KEY 的 SHA-256 雜湊值。明文不會儲存在此。');
+    }
+  }
+  return generatedKey;
+}
+
+/** 重新生成 API Key（忘記或懷疑洩漏時用） */
+function regenerateApiKeyMenu() {
+  var ss = getSpreadsheet();
+  var sh = ss.getSheetByName('Config');
+  if (!sh) { SpreadsheetApp.getUi().alert('錯誤', '找不到 Config 工作表。'); return; }
+  var values = sh.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    var key = String(values[i][0] || '').trim();
+    if (key === 'API_KEY_HASH') {
+      var newKey = 'ak_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+      sh.getRange(i + 1, 2).setValue(sha256_(newKey));
+      sh.getRange(i + 1, 3).setValue('重新生成於 ' + new Date().toISOString() + '；API_KEY 的 SHA-256 雜湊值。');
+      SpreadsheetApp.getUi().alert(
+        '🔑 新 API Key 已生成',
+        '新 API Key（只顯示一次，請即複製）：\n'
+        + '───────────────────────\n'
+        + newKey
+        + '\n───────────────────────\n\n'
+        + '⚠️ 複製時只取上下橫線之間的文字，不要包含空格或換行！\n\n'
+        + '舊 Key 即刻失效！請把新 Key 交給平台管理員更新。',
+        SpreadsheetApp.getUi().ButtonSet.OK
+      );
+      return;
+    }
+  }
+  SpreadsheetApp.getUi().alert('錯誤', '找不到 API_KEY_HASH 設定行。');
+}
+
 function setupSystem() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) throw new Error('請先在 Google Sheet 中綁定 Apps Script，再執行 setupSystem()');
@@ -1974,11 +2045,22 @@ function setupSystem() {
   if (!getConfig('DISTRICT_NAME')) setConfig('DISTRICT_NAME', CONFIG.DEFAULT_DISTRICT_NAME);
   if (!getConfig('SYSTEM_VERSION')) setConfig('SYSTEM_VERSION', 'DBS 3.0 Multi-District');
 
+  // ★ 自動生成 API Key（只存 hash）
+  var apiKeyPlain = generateApiKey_(ss);
+
   SpreadsheetApp.getUi().alert(
     'DBS 3.0 多區版初始化完成',
-    '已建立基本工作表、最新 BadgeCodes、ExaminerMatrix 表頭及新手說明頁。\n\n請照以下順序做：\n1. 先到 README_新手必看 查看步驟\n2. 去黃色 Config 填 DISTRICT_CODE / DISTRICT_NAME / EMAIL_REPLY_TO / ADC_EMAIL / STAFF_TOKEN / ADC_TOKEN\n3. 去綠色 Groups 改成你區旅團資料\n4. 如有主考，去藍色 ExaminerMatrix 填 D / G\n5. 在 Apps Script 按 Deploy → New deployment → Web App → Anyone\n6. 複製 /exec URL，貼回 Config 的 WEB_APP_URL\n7. 用 /exec URL + ?action=getHealthCheck 測試，看到 ready=true 才算完成\n8. 把同一條 /exec URL 交給平台管理員接入',
+    '已建立基本工作表、最新 BadgeCodes、ExaminerMatrix 表頭及新手說明頁。\n\n請照以下順序做：\n1. 先到 README_新手必看 查看步驟\n2. 去黃色 Config 填 DISTRICT_CODE / DISTRICT_NAME / EMAIL_REPLY_TO / ADC_EMAIL / STAFF_TOKEN / ADC_TOKEN\n3. 去綠色 Groups 改成你區旅團資料\n4. 如有主考，去藍色 ExaminerMatrix 填 D / G\n5. Deploy 為 Web App（Anyone）→ 複製 /exec URL\n6. 到前端「申請接入」頁面，填入 /exec URL 和下面的 API Key\n7. 等平台管理員開通\n\n'
+    + '🔑 你的 API Key（只顯示一次，請即複製）：\n'
+    + '───────────────────────\n'
+    + (apiKeyPlain || '（已在 Config 設定）') + '\n'
+    + '───────────────────────\n\n'
+    + '⚠️ 複製時只取上下橫線之間的文字，不要包含空格或換行！\n'
+    + 'Config 只儲存此 Key 的雜湊值，無法還原。\n'
+    + '忘記了？到選單 → 重新生成 API Key。',
     SpreadsheetApp.getUi().ButtonSet.OK
   );
+
 }
 
 function setup() {
@@ -2269,6 +2351,7 @@ function onOpen() {
     .addItem('✍️ 自動補 full_title（BadgeCodes 空白列）', 'autoComposeFullTitles')
     .addItem('🔧 重建 Matrix 表頭（依 BadgeCodes）', 'rebuildMatrixHeaderFromBadgeCodes')
     .addSeparator()
+    .addItem('🔑 重新生成 API Key', 'regenerateApiKeyMenu')
     .addItem('👀 顯示進階工作表', 'showAdvancedSheets')
     .addItem('🙈 隱藏進階工作表', 'hideAdvancedSheets')
     .addItem('📊 查看同步狀態', 'showSyncStatus')

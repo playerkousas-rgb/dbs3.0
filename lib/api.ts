@@ -1,22 +1,30 @@
 /**
  * API 呼叫封裝（DBS 3.0 多區版）
- * - 不再寫死單一 Apps Script URL
- * - 改為根據目前 d=區碼 / localStorage 決定對應 backend
+ * - 所有請求經 /api/proxy 轉發，API Key 不經前端
+ * - 區碼從 localStorage 讀取
  */
 
-import { getApiBase } from './district';
+import { DISTRICT_STORAGE_KEY } from './district';
+
+function getDistrictCode(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem(DISTRICT_STORAGE_KEY) || '';
+}
 
 async function callGet(action: string, params?: Record<string, string>) {
-  const apiBase = getApiBase();
-  const url = new URL(apiBase);
+  const districtCode = getDistrictCode();
+  const url = new URL('/api/proxy', window.location.origin);
+  url.searchParams.set('districtCode', districtCode);
   url.searchParams.set('action', action);
   if (params) {
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   }
 
   try {
-    const res = await fetch(url.toString());
-    return res.json();
+    const res = await fetch(url.toString(), { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.success && data.error) throw new Error(data.error);
+    return data;
   } catch (error) {
     console.error('GET Error:', error);
     throw error;
@@ -24,14 +32,18 @@ async function callGet(action: string, params?: Record<string, string>) {
 }
 
 async function callPost(action: string, body: any) {
-  const apiBase = getApiBase();
+  const districtCode = getDistrictCode();
+  const postBody = { districtCode, action, ...body };
+
   try {
-    const res = await fetch(apiBase, {
+    const res = await fetch('/api/proxy', {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action, ...body }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postBody),
     });
-    return res.json();
+    const data = await res.json();
+    if (!data.success && data.error) throw new Error(data.error);
+    return data;
   } catch (error) {
     console.error('POST Error:', error);
     throw error;
@@ -54,6 +66,9 @@ export const api = {
 
   getGroups: () =>
     callGet('getGroups'),
+
+  getHealthCheck: () =>
+    callGet('getHealthCheck'),
 
   // === POST ===
   submitApplication: (data: any) =>
