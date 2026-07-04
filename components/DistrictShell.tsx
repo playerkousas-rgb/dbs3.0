@@ -153,7 +153,7 @@ export default function DistrictShell({ children }: { children: React.ReactNode 
       <footer className="no-print" style={{ textAlign: 'center', padding: '24px', color: '#666', fontSize: '13px' }}>
         <div>{PLATFORM_COPYRIGHT}</div>
         <div style={{ marginTop: '6px' }}>
-          {district ? `${district.name} · Multi-district platform powered by SKWSCOUT SYSTEM` : 'Multi-district platform powered by SKWSCOUT SYSTEM'}
+          {district ? `${district.name} · Multi-district platform powered by Scout System` : 'Multi-district platform powered by Scout System'}
         </div>
       </footer>
     </>

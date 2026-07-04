@@ -8,7 +8,7 @@ export default function AdminPage() {
   const { withDistrict } = useDistrict();
   const [token, setToken] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'pending' | 'certificates' | 'printList' | 'examiners' | 'badges' | 'help'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'pending' | 'settings' | 'certificates' | 'printList' | 'examiners' | 'badges' | 'help'>('dashboard');
   const [pendingApps, setPendingApps] = useState<any[]>([]);
   const [dashboard, setDashboard] = useState<Record<string, number> | null>(null);
   const [printList, setPrintList] = useState<any[]>([]);
@@ -232,6 +232,7 @@ export default function AdminPage() {
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} label="總覽" />
         <TabButton active={activeTab === 'pending'} onClick={() => { setActiveTab('pending'); loadPending(); }} label="待批核" />
+        <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} label="⚖️ 主考機制" />
         <TabButton active={activeTab === 'certificates'} onClick={() => { setActiveTab('certificates'); loadCerts(); }} label="🏆 證書管理" />
         <TabButton active={activeTab === 'printList'} onClick={() => { setActiveTab('printList'); loadPrintList(); }} label="📋 列印清單" />
         <TabButton active={activeTab === 'examiners'} onClick={() => { setActiveTab('examiners'); loadExaminers(); }} label="主考名單" />
@@ -243,7 +244,7 @@ export default function AdminPage() {
         <div style={{ background: 'white', padding: '20px', borderRadius: '12px' }}>
           <h3 style={{ color: '#003366', marginTop: 0 }}>待批核申請列表</h3>
           <p style={{ color: '#666', fontSize: '13px', marginTop: 0 }}>
-            💡 系統會預先計算每筆申請的主考分配建議，您可確認後批核，或改派其他主考。
+            💡 系統會按「主考機制」設定預先計算分配建議；您可確認後批核，或改派其他主考。
           </p>
           {pendingApps.length === 0 ? (
             <p style={{ color: '#666' }}>目前沒有待批核的申請</p>
@@ -260,6 +261,11 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+      )}
+
+
+      {activeTab === 'settings' && (
+        <AssignmentModePanel token={token} />
       )}
 
       {activeTab === 'certificates' && (
@@ -437,6 +443,127 @@ export default function AdminPage() {
   );
 }
 
+
+// ============================================================
+// 主考指派機制設定
+// ============================================================
+function AssignmentModePanel({ token }: { token: string }) {
+  const [mode, setMode] = useState<'GROUP_PRIORITY' | 'DISTRICT_PRIORITY' | 'NO_SAME_GROUP'>('GROUP_PRIORITY');
+  const [label, setLabel] = useState('旅團主考優先');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const loadSettings = async () => {
+    setLoading(true);
+    setMessage('');
+    try {
+      const res = await api.adminGetSettings(token);
+      if (res.success) {
+        setMode(res.assignmentMode || 'GROUP_PRIORITY');
+        setLabel(res.assignmentModeLabel || '旅團主考優先');
+      } else {
+        setMessage('❌ 載入失敗：' + (res.error || '未知錯誤'));
+      }
+    } catch {
+      setMessage('網絡錯誤');
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadSettings(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  const changeMode = async (nextMode: 'GROUP_PRIORITY' | 'DISTRICT_PRIORITY' | 'NO_SAME_GROUP') => {
+    const nextLabel = nextMode === 'GROUP_PRIORITY' ? '旅團主考優先' : nextMode === 'DISTRICT_PRIORITY' ? '只用區主考（公平模式）' : '同旅團不能擔任主考';
+    if (!confirm(`確定將主考自動指派機制改為「${nextLabel}」？\n\n此設定會影響之後批核 / 重新分配主考的建議與自動派發。`)) return;
+    setLoading(true);
+    setMessage('');
+    try {
+      const res = await api.adminSetAssignmentMode(token, nextMode);
+      if (res.success) {
+        setMode(res.assignmentMode || nextMode);
+        setLabel(res.assignmentModeLabel || nextLabel);
+        setMessage('✅ ' + (res.message || `已切換為：${nextLabel}`));
+      } else {
+        setMessage('❌ 更新失敗：' + (res.error || '未知錯誤'));
+      }
+    } catch {
+      setMessage('網絡錯誤');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ background: 'white', padding: '24px', borderRadius: '12px' }}>
+      <h3 style={{ color: '#003366', marginTop: 0 }}>⚖️ 主考自動指派機制</h3>
+      <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.8 }}>
+        各區可因應公平性與實際運作需要，一鍵決定系統批核時的主考優先次序。<br />
+        目前設定：<strong style={{ color: '#003366' }}>{label}</strong>
+      </p>
+
+      {message && (
+        <div style={{ background: message.startsWith('✅') ? '#e8f5e9' : '#ffebee', color: message.startsWith('✅') ? '#2e7d32' : '#c62828', padding: '12px', borderRadius: '8px', marginBottom: '14px', fontSize: '14px' }}>
+          {message}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+        <ModeCard
+          active={mode === 'GROUP_PRIORITY'}
+          title="旅團主考優先"
+          tag="原有 / 預設"
+          desc="同旅 G 旅團主考會優先被建議或派發；沒有合適 G 主考時才派 D 區主考。適合信任旅團內部先處理的區。"
+          button="使用旅團優先"
+          loading={loading}
+          onClick={() => changeMode('GROUP_PRIORITY')}
+        />
+        <ModeCard
+          active={mode === 'DISTRICT_PRIORITY'}
+          title="只用區主考（公平模式）"
+          tag="D 主考可信"
+          desc="系統只會建議或自動派發 D 區主考；即使該 D 主考本身是考生同旅團領袖，仍視為 ADC 已授權的區主考，可以獲派。"
+          button="使用只用區主考"
+          loading={loading}
+          onClick={() => changeMode('DISTRICT_PRIORITY')}
+        />
+        <ModeCard
+          active={mode === 'NO_SAME_GROUP'}
+          title="同旅團不能擔任主考"
+          tag="跨旅團隨機"
+          desc="所有具該章資格的主考進入候選池並隨機分配，但只要主考所屬旅團與考生相同，不論 D 或 G 都不會獲派。"
+          button="使用非同旅隨機"
+          loading={loading}
+          onClick={() => changeMode('NO_SAME_GROUP')}
+        />
+      </div>
+
+      <div style={{ marginTop: '16px', background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', color: '#334155', lineHeight: 1.8, fontSize: '13px' }}>
+        <strong>說明：</strong>此設定寫入 Google Sheet 的 <code>Config → EXAMINER_ASSIGNMENT_MODE</code>。更改後不會重派已指派個案，只會影響之後「待批核」確認與主考拒絕後重新分配。人手改派亦會受目前模式限制。
+      </div>
+
+      <button onClick={loadSettings} disabled={loading} style={{ marginTop: '14px', padding: '8px 14px', borderRadius: '8px', border: '1px solid #003366', background: 'white', color: '#003366', fontWeight: 700, cursor: 'pointer' }}>
+        {loading ? '處理中...' : '重新載入設定'}
+      </button>
+    </div>
+  );
+}
+
+function ModeCard({ active, title, tag, desc, button, loading, onClick }: any) {
+  return (
+    <div style={{ border: `2px solid ${active ? '#2e7d32' : '#e5e7eb'}`, borderRadius: '14px', padding: '18px', background: active ? '#f1f8e9' : '#fcfdff' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+        <h4 style={{ margin: 0, color: '#003366' }}>{title}</h4>
+        <span style={{ fontSize: '11px', borderRadius: '999px', padding: '3px 8px', background: active ? '#2e7d32' : '#e0e0e0', color: active ? 'white' : '#555', fontWeight: 700 }}>
+          {active ? '使用中' : tag}
+        </span>
+      </div>
+      <p style={{ color: '#555', fontSize: '13px', lineHeight: 1.7, minHeight: '86px' }}>{desc}</p>
+      <button onClick={onClick} disabled={loading || active} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: active ? '#a5d6a7' : '#003366', color: 'white', fontWeight: 700, cursor: active ? 'default' : 'pointer' }}>
+        {active ? '目前使用中' : button}
+      </button>
+    </div>
+  );
+}
+
 // ============================================================
 // DBS 後台說明（DBS 指南 + 維護 + 程式說明）
 // ============================================================
@@ -455,11 +582,13 @@ function DbsHelp() {
           <HSub>你可以做什麼</HSub>
           <HUl items={[
             '報考審批、指派主考、證書管理、報表：本「秘書後台」各分頁。',
+            '主考自動指派模式：在「⚖️ 主考機制」一鍵選擇旅團主考優先、只用區主考，或同旅團不能擔任主考。',
             '主考名單管理、新增專章、同步：Google 試算表「🏕️ 主考管理」選單。',
           ]} />
           <HSub>日常重點</HSub>
           <HOl items={[
             '報考審批/派主考/證書：在本後台操作（沿用原流程）。',
+            '如區內關注公平問題，可先到「⚖️ 主考機制」改用只用區主考，或同旅團不能擔任主考；設定只影響之後批核及重新分配。',
             '主考委任：ADC 在 /adc 審批後系統已自動寫入並同步，你只會收到通知信，通常不用手動同步。',
             '新增專科徽章：見「後台維護說明」的新增專章步驟。',
             '取消主考資格：到試算表 ExaminerMatrix 把該主考該章的格清空，再按選單「🔄 同步主考資料」。',
@@ -649,7 +778,12 @@ function PendingCard({ app, onApprove, loading }: { app: any; onApprove: (id: st
   };
 
   const eligibleExaminers = allExaminers.filter((ex: any) =>
-    ex.qualifiedBadges?.some((qb: any) => qb.badgeName === app.badgeName)
+    ex.qualifiedBadges?.some((qb: any) => {
+      if (qb.badgeName !== app.badgeName) return false;
+      if (preview.assignmentMode === 'DISTRICT_PRIORITY') return qb.scope === 'D';
+      if (preview.assignmentMode === 'NO_SAME_GROUP') return !isSameGroupClient(ex.unit, app.groupId);
+      return true;
+    })
   );
 
   const previewColor =
@@ -694,7 +828,7 @@ function PendingCard({ app, onApprove, loading }: { app: any; onApprove: (id: st
         </div>
 
         <div style={{ background: previewBg, padding: '10px', borderRadius: '6px', border: `1px solid ${previewColor}` }}>
-          <div style={{ fontSize: '11px', color: '#666', marginBottom: '2px' }}>建議主考</div>
+          <div style={{ fontSize: '11px', color: '#666', marginBottom: '2px' }}>建議主考{preview.assignmentModeLabel ? `｜${preview.assignmentModeLabel}` : ''}</div>
           <div style={{ fontSize: '14px', fontWeight: 600, color: previewColor }}>
             {preview.label || '—'}
           </div>
@@ -795,6 +929,23 @@ function PendingCard({ app, onApprove, loading }: { app: any; onApprove: (id: st
       </div>
     </div>
   );
+}
+
+
+function isSameGroupClient(unit: string, groupId: string) {
+  const parseNo = (value: string) => {
+    const raw = String(value || '').trim();
+    const g = raw.match(/G-?0*(\d+)/i);
+    if (g) return g[1];
+    const cn = raw.match(/第\s*0*(\d+)\s*旅/);
+    if (cn) return cn[1];
+    const num = raw.match(/^0*(\d+)$/);
+    if (num) return num[1];
+    return '';
+  };
+  const a = parseNo(unit);
+  const b = parseNo(groupId);
+  return !!a && !!b && a === b;
 }
 
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {

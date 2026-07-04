@@ -16,6 +16,16 @@ interface UpdateItem {
 
 const updates: UpdateItem[] = [
   {
+    version: '3.0.1',
+    title: '主考指派反轉機制與中立平台署名更新',
+    date: '2026-07-04',
+    level: 'recommended',
+    summary: '新增秘書後台「⚖️ 主考機制」，可一鍵切換旅團主考優先、只用區主考（公平模式）、同旅團不能擔任主考；平台署名統一為 Scout System。',
+    impact: '建議各區更新 GS 模板及前端。既有已指派個案不會被重派；新設定只影響之後批核及主考拒絕後重新分配；同旅團不能擔任主考模式會排除所有同旅團 D/G 主考。',
+    action: '新接入地區直接使用最新模板；既有地區可把新版 GS 更新到 Apps Script，確認 Config 有 EXAMINER_ASSIGNMENT_MODE 後重新部署。',
+    downloadHref: '/downloads/DBS_3_0_MULTI_DISTRICT.txt',
+  },
+  {
     version: '3.0.0',
     title: 'DBS 3.0 多區版初始模板上線',
     date: '2026-06-15',

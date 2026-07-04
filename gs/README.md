@@ -6,6 +6,8 @@
 gs/DBS_3_0_MULTI_DISTRICT.gs
 ```
 
+平台由 **Scout System** 以中立第三方身份維護；筲箕灣區是首個已接入及實際使用地區。
+
 ## 使用方式
 
 1. 建立空白 Google Sheet
@@ -25,12 +27,21 @@ setupSystem()
    - `FRONTEND_URL`
    - `STAFF_TOKEN`
    - `ADC_TOKEN`
+   - `EXAMINER_ASSIGNMENT_MODE`（可稍後在秘書後台一鍵切換）
 6. Deploy 為 Web App
 7. 測試：
 
 ```text
 https://script.google.com/macros/s/.../exec?action=getHealthCheck
 ```
+
+## 主考指派模式
+
+- `GROUP_PRIORITY`：同旅 G 旅團主考優先；沒有合適 G 時才派 D 區主考。
+- `DISTRICT_PRIORITY`：只用 D 區主考（公平模式）；D 主考即使與考生同旅團亦可獲派。
+- `NO_SAME_GROUP`：同旅團不能擔任主考；所有具該章資格的主考隨機，但排除與考生同旅團者。
+
+設定位置：`Config → EXAMINER_ASSIGNMENT_MODE`，或前端「秘書後台 → ⚖️ 主考機制」。
 
 ## 說明
 
@@ -41,5 +52,5 @@ https://script.google.com/macros/s/.../exec?action=getHealthCheck
 ## 固定版權
 
 ```text
-© 2026 SKWSCOUT SYSTEM
+© 2026 Scout System
 ```

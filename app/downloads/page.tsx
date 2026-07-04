@@ -51,7 +51,7 @@ export default function DownloadsPage() {
             用途：建立全新地區的 Google Sheet / Apps Script 後台模板
           </div>
           <div style={{ color: '#666', fontSize: '13px', marginTop: '4px' }}>
-            內容：setupSystem()、getHealthCheck、Config 初始化、d= 區碼 email links、證書及主考流程
+            內容：setupSystem()、getHealthCheck、Config 初始化、d= 區碼 email links、證書及主考流程、主考指派模式切換
           </div>
           <div style={{ color: '#666', fontSize: '13px', marginTop: '4px' }}>
             已包括：<strong>最新 BadgeCodes 預載（預設隱藏）</strong>、<strong>ExaminerMatrix 表頭自動建立</strong>、<strong>新手 README 工作表</strong>、<strong>進階工作表預設隱藏</strong>

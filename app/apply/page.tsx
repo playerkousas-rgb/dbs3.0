@@ -484,6 +484,7 @@ const selectedBadge = badges.find(b => b.fullTitle === form.badgeName);
                   </select>
                   <div style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>
                     <strong>可選主考：</strong>
+                    <div style={{ marginTop: '4px', color: '#888' }}>實際指派仍需區會批核，並會按本區設定的「旅團主考優先 / 只用區主考 / 同旅團不能擔任主考」機制處理。</div>
                     <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
                       {availableExaminers.map((ex, idx) => (
                         <li key={idx} style={{ marginBottom: '2px' }}>
@@ -583,7 +584,7 @@ const selectedBadge = badges.find(b => b.fullTitle === form.badgeName);
         {/* ===== 流程提醒 ===== */}
         <div style={{ background: '#e8f5e9', padding: '16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>
           <strong>📋 提交後流程：</strong><br/>
-          提交 → <strong>家長電郵確認</strong> → 團長電郵確認 → 區會審批 → 派發主考 → 考核 → 證書
+          提交 → <strong>家長電郵確認</strong> → 團長電郵確認 → 區會審批 → 按本區主考機制派發主考 → 考核 → 證書
         </div>
 
         <div style={{ background: '#fff3e0', padding: '16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>

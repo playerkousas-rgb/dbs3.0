@@ -16,7 +16,7 @@ export default function DistrictsPage() {
       <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
         <h2 style={{ marginTop: 0, color: '#003366' }}>🌏 現已使用地區</h2>
         <p style={{ color: '#666', lineHeight: 1.7 }}>
-          此頁用作展示目前已接入、測試中或暫停服務的地區。若你所屬地區未在列表中，可把本平台資料轉發給區內負責人，邀請他們試用接入。
+          此頁用作展示目前已接入、測試中或暫停服務的地區。平台由 Scout System 以中立第三方身份維護；筲箕灣區是首個已接入及實際使用地區。若你所屬地區未在列表中，可把本平台資料轉發給區內負責人，邀請他們試用接入。
         </p>
       </section>
 

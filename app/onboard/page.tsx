@@ -24,14 +24,14 @@ export default function OnboardPage() {
       'API Key：' + (apiKey || ''),
       '備註：' + (notes || ''),
     ].join('\n');
-    return `mailto:ai@skwscout.org.hk?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }, [districtName, districtCode, contactName, contactEmail, webAppUrl, apiKey, notes]);
 
   return (
     <div style={{ maxWidth: '780px', margin: '0 auto', background: 'white', padding: '28px', borderRadius: '16px' }}>
       <h2 style={{ marginTop: 0, color: '#003366' }}>📮 提交區接入申請</h2>
       <p style={{ color: '#666', lineHeight: 1.7 }}>
-        完成 Google Sheet + Apps Script 建置後，請在此填妥資料提交給平台管理員。開通後你區就可以使用。
+        完成 Google Sheet + Apps Script 建置後，請在此填妥資料並寄給平台管理員指定電郵。開通後你區就可以使用。
       </p>
 
       <div style={{ display: 'grid', gap: '16px' }}>
@@ -85,7 +85,7 @@ API Key：${apiKey}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '20px' }}>
         <a href={canSubmit ? mailto : undefined} style={{ textDecoration: 'none', opacity: canSubmit ? 1 : 0.5, pointerEvents: canSubmit ? 'auto' : 'none' }}>
           <button style={{ padding: '12px 18px', borderRadius: '10px', border: 'none', background: '#003366', color: 'white', fontWeight: 700, cursor: canSubmit ? 'pointer' : 'not-allowed' }}>
-            📧 開啟電郵送出
+            📧 開啟電郵草稿
           </button>
         </a>
         {!canSubmit && <p style={{ fontSize: 12, color: '#c62828', alignSelf: 'center' }}>請填寫所有必填欄位</p>}

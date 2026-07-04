@@ -68,7 +68,7 @@ function initializeSheets(ss) {
       name: 'Config',
       headers: ['Key', 'Value', 'Description'],
       data: [
-        ['DISTRICT_CODE', CONFIG.DEFAULT_DISTRICT_CODE, '【必填】區碼（建議 3-4 個英文字，例如 SKW / CHW）'],
+        ['DISTRICT_CODE', CONFIG.DEFAULT_DISTRICT_CODE, '【必填】區碼（建議 3-4 個英文字，例如 ABC / CHW）'],
         ['DISTRICT_NAME', CONFIG.DEFAULT_DISTRICT_NAME, '【必填】顯示於前端及 email 的地區名稱'],
         ['CURRENT_TERM_START', '2025-04-01', '主考任期開始日期'],
         ['CURRENT_TERM_END', '2027-03-31', '主考任期結束日期'],
@@ -85,6 +85,7 @@ function initializeSheets(ss) {
         ['STAFF_TOKEN', 'change-this-staff-token', '【必填】秘書後台密鑰（請立即更改）'],
         ['ADC_TOKEN', 'change-this-adc-token', '【必填】ADC 審批密鑰（請立即更改）'],
         ['API_KEY_HASH', '', 'setup 自動生成；API_KEY 的 SHA-256 雜湊值，用於驗證前端請求。明文不會儲存在此。'],
+        ['EXAMINER_ASSIGNMENT_MODE', 'GROUP_PRIORITY', '主考自動指派模式：GROUP_PRIORITY=同旅 G 旅團主考優先；DISTRICT_PRIORITY=只用 D 區主考；NO_SAME_GROUP=所有合資格主考隨機但排除同旅團'],
         ['CERT_SIGNER_TITLE_CN', '助理區總監(童軍)', '證書簽發人中文'],
         ['CERT_SIGNER_TITLE_EN', 'Assistant District Commissioner (Scouts)', '證書簽發人英文'],
         ['CERT_SIGNER_LABEL_CN', '助理區總監(童軍)', '證書中文職銜'],
@@ -297,6 +298,7 @@ function getReadmeSheetData_() {
     ['先做這 4 步', '1) 先執行 setupSystem() → 2) 通過 Google 權限授權 → 3) 回 Config 填黃底欄位 → 4) Deploy 為 Web App 拿 /exec URL'],
     ['你要改的工作表（有顏色）', '黃色 Config：必填設定；綠色 Groups：填你區旅團資料；藍色 ExaminerMatrix：填主考 D / G。BadgeCodes 已預載最新章目，但預設隱藏，不用你手建。'],
     ['Config 必填', 'DISTRICT_CODE、DISTRICT_NAME、EMAIL_REPLY_TO、ADC_EMAIL、STAFF_TOKEN、ADC_TOKEN。FRONTEND_URL 已預設平台網址，一般不用改。Deploy 後把 /exec URL 貼回 WEB_APP_URL。'],
+    ['主考指派模式', 'Config 的 EXAMINER_ASSIGNMENT_MODE 可由秘書後台一鍵切換：GROUP_PRIORITY=同旅 G 旅團主考優先；DISTRICT_PRIORITY=只用 D 區主考；NO_SAME_GROUP=所有合資格主考隨機但排除同旅團。'],
     ['Groups 怎樣填', '每列 1 位領袖 / 1 個旅團。例：group_id=G-001、group_number=1、group_name=第1旅、leader_name=陳大文、leader_email=group1@example.com'],
     ['BadgeCodes 怎樣用', '已預載最新章目，預設隱藏，一般不用自己重建，也不用日常手改。新章正確做法＝貼平台更新檔 GS 並 Run 1 次。'],
     ['ExaminerMatrix 怎樣填', 'A 欄=主考姓名，B 欄=單位（例如：第1旅），C 欄起每個章填 D 或 G。D=區主考，G=旅團主考。已有主考名單可直接批量填這張表，不用重新申請。'],
@@ -311,7 +313,7 @@ function getReadmeSheetData_() {
     ['Config 存了甚麼？', '只有 API Key 的 SHA-256 雜湊值（API_KEY_HASH），連管理員也無法還原。'],
     ['攻擊門檻', '要取得你的資料，攻擊者要麼攻破 Google 伺服器，要麼攻破 Vercel 伺服器。比存在自己家裡的電腦更安全。'],
     ['健康檢查', '用瀏覽器打開：你的 /exec URL + ?action=getHealthCheck。看到 ready=true 才算完成。'],
-    ['固定版權', '© 2026 SKWSCOUT SYSTEM']
+    ['固定版權', '© 2026 Scout System']
   ];
 }
 
@@ -654,6 +656,8 @@ function doPost(e) {
       case 'markCertificatePickedUp': result = apiMarkCertificatePickedUp(data); break;
       case 'adminGetPendingApplications': result = apiAdminGetPendingApplications(data); break;
       case 'adminGetDashboard': result = apiAdminGetDashboard(data); break;
+      case 'adminGetSettings': result = apiAdminGetSettings(data); break;
+      case 'adminSetAssignmentMode': result = apiAdminSetAssignmentMode(data); break;
       case 'approveExaminerAppointment': result = apiApproveExaminerAppointment(data); break;
       case 'getPrintList': result = apiGetPrintList(data); break;
       case 'reprintCertificate': result = apiReprintCertificate(data); break;
@@ -920,6 +924,8 @@ function apiDistrictApprove(data) {
   var badgeName = getAppValue(appData, headers, 'badge_name');
   var examArrType = getAppValue(appData, headers, 'exam_arrangement_type');
   var selfExaminerName = getAppValue(appData, headers, 'self_examiner_name');
+  var groupId = getAppValue(appData, headers, 'group_id');
+  var assignmentMode = getExaminerAssignmentMode_();
   var now = new Date(), nowStr = now.toISOString();
   if (examArrType === 'CERTIFICATE_EXCHANGE' || examArrType === 'APPROVED_COURSE' || examArrType === 'EXAM_DAY') {
     setAppCell(sheet, rowIndex, headers, 'district_approved_at', nowStr);
@@ -929,30 +935,35 @@ function apiDistrictApprove(data) {
     return { success: true, message: '已批核（' + CONFIG.EXAM_ARRANGEMENT[examArrType] + '）' };
   }
   var assignedExaminerId = '', assignedExaminerName = '', assignedExaminerEmail = '', assignedExaminerPhone = '';
-  if (examArrType === 'SELF_APPLY' && selfExaminerName) {
-    var examinersSheet = ss.getSheetByName('Examiners');
-    var examinersData = examinersSheet.getDataRange().getValues();
-    var exH = examinersData[0];
-    for (var i = 1; i < examinersData.length; i++) {
-      var exName = examinersData[i][exH.indexOf('name')];
-      var exStatus = examinersData[i][exH.indexOf('status')];
-      var exEnd = new Date(examinersData[i][exH.indexOf('term_end')]);
-      var dBadges = (examinersData[i][exH.indexOf('district_badges')] || '').toString();
-      var gBadges = (examinersData[i][exH.indexOf('group_badges')] || '').toString();
-      var allBadges = dBadges + ',' + gBadges;
-      if (exName === selfExaminerName && exStatus === 'ACTIVE' && exEnd > now && allBadges.indexOf(badgeName) >= 0) {
-        assignedExaminerId = examinersData[i][exH.indexOf('examiner_id')];
-        assignedExaminerName = exName;
-        assignedExaminerEmail = examinersData[i][exH.indexOf('email')];
-        assignedExaminerPhone = examinersData[i][exH.indexOf('phone')];
-        break;
-      }
+  if (examArrType === 'SELF_APPLY' && selfExaminerName && assignmentMode !== 'NO_SAME_GROUP') {
+    var selfPick = findSelfSelectedExaminer_(selfExaminerName, badgeName, groupId, now);
+    if (!selfPick.found) return { success: false, error: '自行安排的主考不在授權名單內', requiresManualOverride: true };
+    if (!selfPick.valid) return { success: false, error: selfPick.error || '自行安排的主考不符合此申請資格', requiresManualOverride: true };
+
+    // GROUP_PRIORITY：可採用自選同旅 G 或 D；DISTRICT_PRIORITY：只採用 D（即使 D 與考生同旅團也可）。
+    if (assignmentMode === 'GROUP_PRIORITY' || (assignmentMode === 'DISTRICT_PRIORITY' && selfPick.scope === 'D')) {
+      assignedExaminerId = selfPick.examinerId;
+      assignedExaminerName = selfPick.name;
+      assignedExaminerEmail = selfPick.email;
+      assignedExaminerPhone = selfPick.phone;
     }
-    if (!assignedExaminerId) return { success: false, error: '自行安排的主考不在授權名單內', requiresManualOverride: true };
   }
   if (data.overrideExaminerId && !assignedExaminerId) {
     var overrideEx = _getActiveExaminersForAdmin_().find(function(e){ return e.examinerId === data.overrideExaminerId; });
     if (overrideEx) {
+      var overrideHasD = overrideEx.districtBadges.indexOf(badgeName) >= 0;
+      var overrideHasSameG = overrideEx.groupBadges.indexOf(badgeName) >= 0 && isSameGroupUnit_(overrideEx.unit, groupId);
+      if (assignmentMode === 'DISTRICT_PRIORITY' && !overrideHasD) {
+        return { success: false, error: '只用區主考模式下只可指派 D 區主考' };
+      }
+      if (assignmentMode === 'NO_SAME_GROUP') {
+        var overrideSameUnit = isSameGroupUnit_(overrideEx.unit, groupId);
+        if (overrideSameUnit) return { success: false, error: '同旅團不能擔任主考模式下，不可指派與考生同旅團的主考' };
+        if (!overrideHasD && overrideEx.groupBadges.indexOf(badgeName) < 0) return { success: false, error: '改派主考無此章資格' };
+      }
+      if (assignmentMode === 'GROUP_PRIORITY' && !overrideHasD && !overrideHasSameG) {
+        return { success: false, error: '改派主考不符合此章或旅團資格' };
+      }
       assignedExaminerId = overrideEx.examinerId;
       assignedExaminerName = overrideEx.name;
       assignedExaminerEmail = overrideEx.email;
@@ -960,7 +971,7 @@ function apiDistrictApprove(data) {
     }
   }
   if (!assignedExaminerId) {
-    var autoAssign = autoAssignExaminer(badgeName);
+    var autoAssign = autoAssignExaminer(badgeName, '', groupId);
     if (autoAssign) { assignedExaminerId = autoAssign.examinerId; assignedExaminerName = autoAssign.name; assignedExaminerEmail = autoAssign.email; assignedExaminerPhone = autoAssign.phone; }
   }
   if (!assignedExaminerId) return { success: false, error: '未能自動指派主考，請手動指派' };
@@ -1079,7 +1090,8 @@ function apiExaminerDecline(data) {
   setAppCell(sheet, rowIndex, headers, 'examiner_accepted', 'declined');
   setAppCell(sheet, rowIndex, headers, 'decline_reason', data.reason);
   if (oldExaminerId) updateExaminerLoad(oldExaminerId, -1);
-  var newAssign = autoAssignExaminer(badgeName, oldExaminerId);
+  var groupId = getAppValue(allData[rowIndex], headers, 'group_id');
+  var newAssign = autoAssignExaminer(badgeName, oldExaminerId, groupId);
   if (!newAssign) {
     setAppCell(sheet, rowIndex, headers, 'assigned_examiner_id', '');
     setAppCell(sheet, rowIndex, headers, 'status', CONFIG.STATUS.PENDING_DISTRICT);
@@ -1645,7 +1657,7 @@ function apiAdminGetPendingApplications(data) {
       examinerPreview: examinerPreview
     });
   }
-  return { success: true, applications: pending, availableExaminers: examinersList };
+  return { success: true, applications: pending, availableExaminers: examinersList, assignmentMode: getExaminerAssignmentMode_(), assignmentModeLabel: getExaminerAssignmentModeLabel_() };
 }
 
 // 共用：讀取所有有效主考（簡化版，供 admin 預覽用）
@@ -1683,66 +1695,86 @@ function _getActiveExaminersForAdmin_() {
 
 // 共用：為一筆申請預覽主考
 function _previewExaminerForApp_(examArrType, selfExaminerName, badgeName, groupId, examinersList) {
+  var assignmentMode = getExaminerAssignmentMode_();
+  var assignmentModeLabel = getExaminerAssignmentModeLabel_();
+
   // 不需派主考的安排
   if (examArrType === 'CERTIFICATE_EXCHANGE' || examArrType === 'APPROVED_COURSE' || examArrType === 'EXAM_DAY') {
-    return { mode: 'no_examiner', label: '不需派主考', detail: CONFIG.EXAM_ARRANGEMENT[examArrType] || examArrType, valid: true };
+    return { mode: 'no_examiner', label: '不需派主考', detail: CONFIG.EXAM_ARRANGEMENT[examArrType] || examArrType, valid: true, assignmentMode: assignmentMode, assignmentModeLabel: assignmentModeLabel };
   }
-  
-  // 取得考生旅團資訊（找團名比對 G 主考）
-  var groupName = getGroupName(groupId);
-  
-  // 自選主考
-  if (examArrType === 'SELF_APPLY' && selfExaminerName) {
+
+  // 自選主考：GROUP_PRIORITY 可採用同旅 G / D；DISTRICT_PRIORITY 只採用 D；NO_SAME_GROUP 不採用自選，改為隨機派非同旅。
+  if (examArrType === 'SELF_APPLY' && selfExaminerName && assignmentMode !== 'NO_SAME_GROUP') {
     var found = null;
     for (var i = 0; i < examinersList.length; i++) {
       if (examinersList[i].name === selfExaminerName) { found = examinersList[i]; break; }
     }
     if (!found) {
-      return { mode: 'self', label: '⚠️ ' + selfExaminerName, detail: '不在主考名單，建議改派', valid: false, severity: 'warn' };
+      return { mode: 'self', label: '⚠️ ' + selfExaminerName, detail: '不在主考名單，建議改派', valid: false, severity: 'warn', assignmentMode: assignmentMode, assignmentModeLabel: assignmentModeLabel };
     }
-    // 檢查資格
+
     var isD = found.districtBadges.indexOf(badgeName) >= 0;
     var isG = found.groupBadges.indexOf(badgeName) >= 0;
     if (!isD && !isG) {
-      return { mode: 'self', label: '❌ ' + selfExaminerName, detail: '無此章資格', valid: false, severity: 'error' };
+      return { mode: 'self', label: '❌ ' + selfExaminerName, detail: '無此章資格', valid: false, severity: 'error', assignmentMode: assignmentMode, assignmentModeLabel: assignmentModeLabel };
     }
-    // G 主考要同旅
-    if (isG && !isD) {
-      var sameUnit = found.unit && groupName && (found.unit.indexOf(groupName) >= 0 || groupName.indexOf(found.unit) >= 0);
-      if (!sameUnit) {
-        return { mode: 'self', label: '⚠️ ' + selfExaminerName, detail: 'G 主考但不同旅 (' + found.unit + ')', valid: false, severity: 'warn' };
-      }
-    }
-    // 負荷檢查
     if (found.currentLoad >= found.maxLoad) {
-      return { mode: 'self', label: '⚠️ ' + selfExaminerName, detail: '已滿載 ' + found.currentLoad + '/' + found.maxLoad, valid: false, severity: 'warn' };
+      return { mode: 'self', label: '⚠️ ' + selfExaminerName, detail: '已滿載 ' + found.currentLoad + '/' + found.maxLoad, valid: false, severity: 'warn', assignmentMode: assignmentMode, assignmentModeLabel: assignmentModeLabel };
     }
-    var scope = isD ? 'D 區主考' : 'G 旅團主考';
-    return { mode: 'self', label: '✅ ' + selfExaminerName, detail: scope + '・負荷 ' + found.currentLoad + '/' + found.maxLoad, valid: true, examinerId: found.examinerId };
+
+    if (isD) {
+      return { mode: 'self', label: '✅ ' + selfExaminerName, detail: '自選 D 區主考・' + assignmentModeLabel + '・負荷 ' + found.currentLoad + '/' + found.maxLoad, valid: true, examinerId: found.examinerId, scope: 'D', assignmentMode: assignmentMode, assignmentModeLabel: assignmentModeLabel };
+    }
+
+    var sameUnit = isSameGroupUnit_(found.unit, groupId);
+    if (isG && !sameUnit) {
+      return { mode: 'self', label: '⚠️ ' + selfExaminerName, detail: 'G 主考但不同旅 (' + found.unit + ')', valid: false, severity: 'warn', assignmentMode: assignmentMode, assignmentModeLabel: assignmentModeLabel };
+    }
+    if (isG && assignmentMode === 'GROUP_PRIORITY') {
+      return { mode: 'self', label: '✅ ' + selfExaminerName, detail: '自選同旅 G 旅團主考・' + assignmentModeLabel + '・負荷 ' + found.currentLoad + '/' + found.maxLoad, valid: true, examinerId: found.examinerId, scope: 'G', assignmentMode: assignmentMode, assignmentModeLabel: assignmentModeLabel };
+    }
+    // DISTRICT_PRIORITY：不採用自選 G，繼續用下方自動指派預覽（只找 D 區主考）。
+    // NO_SAME_GROUP：不採用自選主考，繼續用下方自動指派預覽（隨機派非同旅）。
   }
-  
-  // 由區會派發 → 預覽自動分配結果
-  var candidates = [];
-  for (var i = 0; i < examinersList.length; i++) {
-    var ex = examinersList[i];
-    if (ex.currentLoad >= ex.maxLoad) continue;
-    var hasD = ex.districtBadges.indexOf(badgeName) >= 0;
-    var hasG = ex.groupBadges.indexOf(badgeName) >= 0;
-    if (hasD || hasG) candidates.push({ ex: ex, scope: hasD ? 'D' : 'G' });
+
+  var best = pickBestExaminerCandidate_(badgeName, groupId, examinersList, null, assignmentMode);
+  if (!best) {
+    return { mode: 'auto', label: '❌ 無合資格主考', detail: (assignmentMode === 'DISTRICT_PRIORITY' ? '請先委任 D 區主考或切回旅團優先模式' : assignmentMode === 'NO_SAME_GROUP' ? '沒有非同旅團的合資格主考' : '請先委任主考或改用人手指派') + '・' + assignmentModeLabel, valid: false, severity: 'error', assignmentMode: assignmentMode, assignmentModeLabel: assignmentModeLabel };
   }
-  if (candidates.length === 0) {
-    return { mode: 'auto', label: '❌ 無合資格主考', detail: '請先委任主考', valid: false, severity: 'error' };
-  }
-  // 排序：負荷低的優先
-  candidates.sort(function(a,b){ return a.ex.currentLoad - b.ex.currentLoad; });
-  var best = candidates[0];
-  return { 
-    mode: 'auto', 
-    label: '🤖 ' + best.ex.name + ' (' + best.scope + ')', 
-    detail: '系統建議・負荷 ' + best.ex.currentLoad + '/' + best.ex.maxLoad + '・共 ' + candidates.length + ' 位合資格', 
+
+  var ignoredSelfNote = (examArrType === 'SELF_APPLY' && selfExaminerName && assignmentMode === 'DISTRICT_PRIORITY') ? '・自選 G 不採用' : (examArrType === 'SELF_APPLY' && selfExaminerName && assignmentMode === 'NO_SAME_GROUP') ? '・自選主考不採用，隨機派非同旅' : '';
+  return {
+    mode: 'auto',
+    label: '🤖 ' + best.ex.name + ' (' + best.scope + ')',
+    detail: assignmentModeLabel + ignoredSelfNote + '・負荷 ' + best.ex.currentLoad + '/' + best.ex.maxLoad + '・共 ' + best.totalCandidates + ' 位合資格',
     valid: true,
-    examinerId: best.ex.examinerId
+    examinerId: best.ex.examinerId,
+    scope: best.scope,
+    assignmentMode: assignmentMode,
+    assignmentModeLabel: assignmentModeLabel
   };
+}
+
+function apiAdminGetSettings(data) {
+  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  return {
+    success: true,
+    assignmentMode: getExaminerAssignmentMode_(),
+    assignmentModeLabel: getExaminerAssignmentModeLabel_(),
+    assignmentModeOptions: [
+      { value: 'GROUP_PRIORITY', label: '旅團主考優先', description: '同旅 G 旅團主考優先；沒有合適 G 時才派 D 區主考。' },
+      { value: 'DISTRICT_PRIORITY', label: '只用區主考（公平模式）', description: '只會自動派 D 區主考；即使 D 主考本身是同旅團領袖，仍視為 ADC 已授權的區主考。' },
+      { value: 'NO_SAME_GROUP', label: '同旅團不能擔任主考', description: '所有具該章資格的主考隨機分配，但排除與考生同旅團的主考。' }
+    ]
+  };
+}
+
+function apiAdminSetAssignmentMode(data) {
+  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  var mode = normalizeExaminerAssignmentMode_(data.assignmentMode || data.mode);
+  setConfig('EXAMINER_ASSIGNMENT_MODE', mode);
+  addAuditLog('ASSIGNMENT_MODE_UPDATED', '', data.updatedBy || '秘書後台', getExaminerAssignmentModeLabel_(mode));
+  return { success: true, assignmentMode: mode, assignmentModeLabel: getExaminerAssignmentModeLabel_(mode), message: '主考指派模式已更新為：' + getExaminerAssignmentModeLabel_(mode) };
 }
 
 function apiAdminGetDashboard(data) {
@@ -1799,40 +1831,115 @@ function apiOverrideExaminer(data) {
 }
 
 // M. 主考工具函數
-function autoAssignExaminer(badgeFullTitle, excludeExaminerId) {
-  var ss = getSpreadsheet();
-  var sheet = ss.getSheetByName('Examiners');
-  var data = sheet.getDataRange().getValues();
-  var exH = data[0];
-  var now = new Date();
+function autoAssignExaminer(badgeFullTitle, excludeExaminerId, groupId) {
+  var examinersList = _getActiveExaminersForAdmin_();
+  var best = pickBestExaminerCandidate_(badgeFullTitle, groupId, examinersList, excludeExaminerId || null, getExaminerAssignmentMode_());
+  if (!best) return null;
+  return {
+    examinerId: best.ex.examinerId,
+    name: best.ex.name,
+    email: best.ex.email,
+    phone: best.ex.phone,
+    load: best.ex.currentLoad,
+    scope: best.scope,
+    assignmentMode: getExaminerAssignmentMode_()
+  };
+}
+
+function pickBestExaminerCandidate_(badgeFullTitle, groupId, examinersList, excludeExaminerId, assignmentMode) {
+  assignmentMode = normalizeExaminerAssignmentMode_(assignmentMode || getExaminerAssignmentMode_());
   var candidates = [];
+  for (var i = 0; i < examinersList.length; i++) {
+    var ex = examinersList[i];
+    if (!ex || ex.examinerId === excludeExaminerId) continue;
+    if (ex.currentLoad >= ex.maxLoad) continue;
 
-  for (var i = 1; i < data.length; i++) {
-    var exId = data[i][exH.indexOf('examiner_id')];
-    if (exId === excludeExaminerId) continue;
-    var status = data[i][exH.indexOf('status')];
-    var termEnd = new Date(data[i][exH.indexOf('term_end')]);
-    var load = parseInt(data[i][exH.indexOf('current_load')] || '0');
-    var max  = parseInt(data[i][exH.indexOf('max_load')] || '5');
-    if (status !== 'ACTIVE' || termEnd <= now || load >= max) continue;
+    var hasD = ex.districtBadges.indexOf(badgeFullTitle) >= 0;
+    var hasG = ex.groupBadges.indexOf(badgeFullTitle) >= 0;
+    var unitSameGroup = isSameGroupUnit_(ex.unit, groupId);
+    var sameGroupG = hasG && unitSameGroup;
+    var priority = 99;
+    var scope = '';
 
-    // 用 full_title 直接比對
-    var dList = String(data[i][exH.indexOf('district_badges')] || '').split(',').map(function(s){return s.trim();});
-    var gList = String(data[i][exH.indexOf('group_badges')] || '').split(',').map(function(s){return s.trim();});
-    if (dList.indexOf(badgeFullTitle) === -1 && gList.indexOf(badgeFullTitle) === -1) continue;
+    if (assignmentMode === 'DISTRICT_PRIORITY') {
+      // 只用區主考：D 主考可獲派，即使其本身是同旅團領袖也可。
+      if (hasD) { priority = 0; scope = 'D'; }
+    } else if (assignmentMode === 'NO_SAME_GROUP') {
+      // 同旅團不能擔任主考：所有具該章資格的 D/G 主考均可進入候選，但同旅團一律排除。
+      if (unitSameGroup) continue;
+      if (hasD || hasG) { priority = 0; scope = hasD ? 'D' : 'G'; }
+    } else {
+      if (sameGroupG) { priority = 0; scope = 'G'; }
+      else if (hasD) { priority = 1; scope = 'D'; }
+    }
 
-    candidates.push({
-      examinerId: exId,
-      name:  data[i][exH.indexOf('name')],
-      email: data[i][exH.indexOf('email')],
-      phone: data[i][exH.indexOf('phone')],
-      load:  load,
-      score: max - load
-    });
+    if (priority >= 99) continue;
+    candidates.push({ ex: ex, scope: scope, priority: priority, rand: Math.random() });
   }
   if (candidates.length === 0) return null;
-  candidates.sort(function(a,b){ return b.score - a.score; });
+  candidates.sort(function(a, b) {
+    if (a.priority !== b.priority) return a.priority - b.priority;
+    if (assignmentMode === 'NO_SAME_GROUP') return a.rand - b.rand;
+    if (a.ex.currentLoad !== b.ex.currentLoad) return a.ex.currentLoad - b.ex.currentLoad;
+    if (a.ex.maxLoad !== b.ex.maxLoad) return b.ex.maxLoad - a.ex.maxLoad;
+    return String(a.ex.name || '').localeCompare(String(b.ex.name || ''));
+  });
+  candidates[0].totalCandidates = candidates.length;
   return candidates[0];
+}
+
+function findSelfSelectedExaminer_(selfExaminerName, badgeFullTitle, groupId, now) {
+  var examinersList = _getActiveExaminersForAdmin_();
+  for (var i = 0; i < examinersList.length; i++) {
+    var ex = examinersList[i];
+    if (ex.name !== selfExaminerName) continue;
+    var hasD = ex.districtBadges.indexOf(badgeFullTitle) >= 0;
+    var hasG = ex.groupBadges.indexOf(badgeFullTitle) >= 0;
+    if (!hasD && !hasG) return { found: true, valid: false, error: '自行安排的主考無此章資格' };
+    if (ex.currentLoad >= ex.maxLoad) return { found: true, valid: false, error: '自行安排的主考已滿載' };
+    if (hasD) {
+      return { found: true, valid: true, scope: 'D', examinerId: ex.examinerId, name: ex.name, email: ex.email, phone: ex.phone };
+    }
+    if (hasG && !isSameGroupUnit_(ex.unit, groupId)) {
+      return { found: true, valid: false, error: '自行安排的 G 旅團主考不是考生所屬旅團' };
+    }
+    return { found: true, valid: true, scope: 'G', examinerId: ex.examinerId, name: ex.name, email: ex.email, phone: ex.phone };
+  }
+  return { found: false, valid: false };
+}
+
+function normalizeExaminerAssignmentMode_(mode) {
+  mode = String(mode || '').trim().toUpperCase();
+  if (mode === 'DISTRICT_PRIORITY') return 'DISTRICT_PRIORITY';
+  if (mode === 'NO_SAME_GROUP') return 'NO_SAME_GROUP';
+  return 'GROUP_PRIORITY';
+}
+
+function getExaminerAssignmentMode_() {
+  return normalizeExaminerAssignmentMode_(getConfig('EXAMINER_ASSIGNMENT_MODE') || 'GROUP_PRIORITY');
+}
+
+function getExaminerAssignmentModeLabel_(mode) {
+  mode = normalizeExaminerAssignmentMode_(mode || getExaminerAssignmentMode_());
+  if (mode === 'DISTRICT_PRIORITY') return '只用區主考（公平模式）';
+  if (mode === 'NO_SAME_GROUP') return '同旅團不能擔任主考';
+  return '旅團主考優先';
+}
+
+function isSameGroupUnit_(examinerUnit, groupId) {
+  var unit = String(examinerUnit || '').trim();
+  if (!unit || !groupId) return false;
+  var normalizedUnit = normalizeUnit_(unit);
+  var info = getGroupFullData(groupId);
+  if (!info) return false;
+  var values = [groupId, info.groupName, info.groupNameCn, info.groupNumber ? ('第' + info.groupNumber + '旅') : ''];
+  for (var i = 0; i < values.length; i++) {
+    var v = String(values[i] || '').trim();
+    if (!v) continue;
+    var nv = normalizeUnit_(v);
+    if (normalizedUnit === nv || normalizedUnit.indexOf(nv) >= 0 || nv.indexOf(normalizedUnit) >= 0) return true;
+  }
+  return false;
 }
 
 function updateExaminerLoad(examinerId, delta) {
@@ -2065,6 +2172,7 @@ function setupSystem() {
   var configSheet = ss.getSheetByName('Config');
   if (configSheet) {
     ensureConfigRow_(configSheet, 'API_KEY_HASH', '', 'setup 自動生成；API_KEY 的 SHA-256 雜湊值。明文不會儲存在此。');
+    ensureConfigRow_(configSheet, 'EXAMINER_ASSIGNMENT_MODE', 'GROUP_PRIORITY', '主考自動指派模式：GROUP_PRIORITY=同旅 G 旅團主考優先；DISTRICT_PRIORITY=只用 D 區主考；NO_SAME_GROUP=所有合資格主考隨機但排除同旅團');
     ensureConfigRow_(configSheet, 'STAFF_TOKEN', '', 'setup 自動生成；秘書後台密鑰。');
     ensureConfigRow_(configSheet, 'ADC_TOKEN', '', 'setup 自動生成；ADC 審批密鑰。');
   }
@@ -2079,9 +2187,10 @@ function setupSystem() {
     + '1. 先到 README_新手必看 查看步驟\n'
     + '2. 去黃色 Config 填 DISTRICT_CODE / DISTRICT_NAME / STAFF_TOKEN / ADC_TOKEN\n'
     + '3. 去綠色 Groups 改成你區旅團資料\n'
-    + '4. Deploy 為 Web App（Anyone）→ 複製 /exec URL\n'
-    + '5. 到前端「申請接入」頁面，填入 /exec URL 和下面的 API Key\n'
-    + '6. 等平台管理員開通',
+    + '4. 可在秘書後台切換主考指派模式（旅團優先 / 只用區主考）\n'
+    + '5. Deploy 為 Web App（Anyone）→ 複製 /exec URL\n'
+    + '6. 到前端「申請接入」頁面，填入 /exec URL 和下面的 API Key\n'
+    + '7. 等平台管理員開通',
     SpreadsheetApp.getUi().ButtonSet.OK
   );
 
@@ -3218,12 +3327,15 @@ function apiGetHealthCheck() {
     var adcToken = String(getConfig('ADC_TOKEN') || '').trim();
     var webAppUrlConfig = String(getConfig('WEB_APP_URL') || '').trim();
     var webAppUrl = webAppUrlConfig || String(ScriptApp.getService().getUrl() || '').trim();
+    var assignmentMode = getExaminerAssignmentMode_();
 
     return {
       success: true,
       districtCode: districtCode,
       districtName: districtName,
       systemVersion: String(getConfig('SYSTEM_VERSION') || 'DBS 3.0 Multi-District'),
+      assignmentMode: assignmentMode,
+      assignmentModeLabel: getExaminerAssignmentModeLabel_(assignmentMode),
       frontendUrl: frontendUrl,
       webAppUrl: webAppUrl,
       spreadsheetId: ss.getId(),

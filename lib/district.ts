@@ -1,5 +1,5 @@
 export const PLATFORM_NAME = 'DBS 3.0 多區專科徽章平台';
-export const PLATFORM_COPYRIGHT = '© 2026 SKWSCOUT SYSTEM';
+export const PLATFORM_COPYRIGHT = '© 2026 Scout System';
 export const DISTRICT_STORAGE_KEY = 'dbs3_selected_district';
 export const DEFAULT_DISABLED_MESSAGE = '此區服務現正暫停。請留意區方通知，或稍後再試。';
 
@@ -29,7 +29,7 @@ export const DISTRICTS = {
     name: '筲箕灣區',
     apiBase: 'https://script.google.com/macros/s/AKfycby9YxshCODYJKymkCD6IuiMiKHswQDySswQPsDC36SLN55XQEdtn_Ik_ja1ES_g7l0/exec',
     status: 'live',
-    note: '首個已接入及實際使用區。Vercel env: DBS_SKW_APIKEY',
+    note: '首個已接入及實際使用地區（本平台由中立第三方 Scout System 維護）。Vercel env: DBS_SKW_APIKEY',
   },
   // ──────────────────────────────────────────────
   // 新區接入：複製以下模板，取消注釋，填入實際資料

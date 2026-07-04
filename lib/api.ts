@@ -96,6 +96,12 @@ export const api = {
   adminGetDashboard: (staffToken: string) =>
     callPost('adminGetDashboard', { staffToken }),
 
+  adminGetSettings: (staffToken: string) =>
+    callPost('adminGetSettings', { staffToken }),
+
+  adminSetAssignmentMode: (staffToken: string, assignmentMode: 'GROUP_PRIORITY' | 'DISTRICT_PRIORITY' | 'NO_SAME_GROUP') =>
+    callPost('adminSetAssignmentMode', { staffToken, assignmentMode, updatedBy: '秘書後台' }),
+
   districtApprove: (staffToken: string, applicationId: string, approvedBy?: string, overrideExaminerId?: string) =>
     callPost('districtApprove', { staffToken, applicationId, approvedBy, overrideExaminerId }),
 

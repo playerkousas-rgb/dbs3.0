@@ -21,6 +21,7 @@ const configItems = [
   { key: 'FRONTEND_URL', note: '已預設平台網址，不用改' },
   { key: 'WEB_APP_URL', note: 'Deploy 後把 /exec URL 貼回此欄' },
   { key: 'API_KEY_HASH', note: 'setup 自動生成，不要修改' },
+  { key: 'EXAMINER_ASSIGNMENT_MODE', note: '主考指派模式；可在秘書後台一鍵切換' },
 ];
 
 export default function SetupPage() {
@@ -29,8 +30,8 @@ export default function SetupPage() {
       <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
         <h2 style={{ marginTop: 0, color: '#003366' }}>🧩 區接入教學</h2>
         <p style={{ color: '#666', lineHeight: 1.8 }}>
-          這個平台採用「統一前端 + 各區獨立 Google Sheet / Apps Script 後台」模式。<br />
-          你不用寫前端程式，只要照步驟建立自己區的 Sheet 後台，再把 <strong>/exec URL 和 API Key</strong> 提交給平台管理員即可接入。
+          這個平台由 Scout System 以中立第三方身份維護，採用「統一前端 + 各區獨立 Google Sheet / Apps Script 後台」模式。<br />
+          筲箕灣區是首個已接入及實際使用地區；其他地區只要照步驟建立自己區的 Sheet 後台，再把 <strong>/exec URL 和 API Key</strong> 提交給平台管理員即可接入。
         </p>
       </section>
 
@@ -64,6 +65,7 @@ export default function SetupPage() {
           <li>再到綠色 <strong>Groups</strong> 把例子資料改成你區真正旅團資料。</li>
           <li>如你區<strong>本身已有主考名單</strong>，請直接把主考資料批量填到藍色 <strong>ExaminerMatrix</strong>，不用叫他們重新申請。</li>
           <li>當你填好 ExaminerMatrix 後，可用選單：<code>🏕️ DBS 管理 → 🔄 同步主考資料</code>，讓前端讀取用的 Examiners 自動同步。</li>
+          <li>如你的地區想決定「旅團主考優先」、「只用區主考（公平模式）」或「同旅團不能擔任主考」，可先在 Config 設定 <code>EXAMINER_ASSIGNMENT_MODE</code>，之後亦可在秘書後台「⚖️ 主考機制」一鍵切換。</li>
           <li>回到 Apps Script，按：<strong>Deploy → New deployment → 類型選 Web App</strong>。</li>
           <li>設定：
             <ul style={{ marginTop: '8px', paddingLeft: '20px', lineHeight: 1.8 }}>
@@ -108,7 +110,8 @@ export default function SetupPage() {
         <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', color: '#334155', lineHeight: 1.8 }}>
           <strong>正確流程：</strong><br />
           新章 = <strong>貼更新檔 GS + Run 1 次</strong><br />
-          如再改主考資格 = <strong>改 ExaminerMatrix + 同步主考資料</strong>
+          如再改主考資格 = <strong>改 ExaminerMatrix + 同步主考資料</strong><br />
+          如改公平安排 = <strong>秘書後台 → ⚖️ 主考機制 → 三種模式一鍵切換</strong>
         </div>
         <p style={{ color: '#666', lineHeight: 1.8 }}>
           不更新通常不會令整個系統失效，但新章或新功能可能未能使用。
@@ -123,6 +126,7 @@ export default function SetupPage() {
           <li>API Key 在 setup 彈窗只顯示一次。忘記了？到 Sheet 選單 → 重新生成 API Key。</li>
           <li>前端 district mapping 由平台管理員統一維護。</li>
           <li>各區只需維護本區 Google Sheet / Apps Script 及資料內容。</li>
+          <li>平台由 Scout System 以中立第三方身份維護；筲箕灣區只是首個使用地區。</li>
           <li>平台版權固定保留，不屬各區自行更改項目。</li>
           <li><strong>{PLATFORM_COPYRIGHT}</strong></li>
         </ul>

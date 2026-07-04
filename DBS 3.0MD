@@ -1,181 +1,162 @@
-DBS 3.0 多區版 — 新 Repo / 假前端佔位說明
-用途：
-這份文件是給 DBS 3.0 多區版 開新 Git Repo / 新 Vercel 專案時作為佔位用途。
-現階段先不搬正式功能，只先建立一個清晰的多區版方向、首頁文案、保留頁面與後續開發規格。
+DBS 3.0 多區版 — Repo / 前端 / 接入說明
 
-之後待正式 3.0 前端網址與最新 backend 規格確定後，再開始實作。
+用途：
+這份文件記錄 DBS 3.0 多區版的定位、固定版權、接入流程、主考指派機制與後續維護方式。
 
 1. 專案定位
 DBS 3.0 多區版是一個：
 
-統一前端
-多區後端（每區一份 Google Sheet + Apps Script）
-由平台管理員手動維護區碼與 Apps Script URL mapping
-給不同區會複製使用的專科徽章系統平台
-核心原則
-首頁先選區
-記住區碼
-全站 URL 帶 d=
-前端維護 district mapping（不是直接暴露 Apps Script URL）
-各區只需：開空白 Google Sheet → 貼 GS → Run 初始化（複製 API Key）→ Deploy → 把 URL + API Key 提交給平台管理員
-平台版權固定歸屬 SKW
+- 統一前端
+- 多區後端（每區一份 Google Sheet + Apps Script）
+- 由平台管理員手動維護區碼與 Apps Script URL mapping
+- 給不同區會複製使用的專科徽章系統平台
+- 由 Scout System 以中立第三方身份維護
+
+筲箕灣區是首個已接入及實際使用本平台的地區；這不代表平台身份屬於單一地區。
+
+核心原則：
+- 首頁先選區
+- 記住區碼
+- 全站 URL 帶 d=
+- 前端維護 district mapping（不直接暴露 Apps Script URL）
+- 各區只需：開空白 Google Sheet → 貼 GS → Run 初始化（複製 API Key）→ Deploy → 把 URL + API Key 提交給平台管理員
+- 平台以中立第三方方式服務多區
+
 2. 版權與署名（固定，不可改）
 多區版前端、教學頁、接入頁、頁尾、README 及相關公開文件，統一保留：
 
 text
 
-© 2026 SKWSCOUT SYSTEM
-說明
+© 2026 Scout System
+
+說明：
 此項為固定值，不交由各區在 Config 自行修改。
 
 原因：
+- 平台由 Scout System 維護
+- 多區共用，需保留一致的系統來源與維護身份
+- 各區仍自行擁有及維護本區資料、Sheet、Apps Script、旅團及主考資料
 
-系統屬於 SKW 建立與維護
-多區共用，但設計與平台功勞需保留原始來源
-可方便其他區使用，但不應變成各區自行署名為原創系統
-顯示原則
-區名可以因應 d= 動態改變
-但頁尾 copyright 固定為：
-text
-
-© 2026 SKWSCOUT SYSTEM
-3. 這個新 Repo 現階段要做什麼？
-目標
-先開一個新的 Git Repo 及 Vercel 專案，用作：
-
-保留多區版網址
-建立對外說明頁
-先放假前端 / 佔位頁
-日後再接入真正 DBS 3.0 多區功能
-現階段不做
-不搬完整 DBS 功能
-不接正式 Apps Script API
-不接正式 district mapping
-不處理真實報考資料
-不做後台
-4. 建議 Repo 名稱
-可考慮以下其中一個：
-
-dbs-multi-district
-dbs-3-multidistrict
-skw-dbs-platform
-dbs-next-platform
-如想保持簡潔，建議：
+顯示原則：
+- 區名可以因應 d= 動態改變
+- 頁尾 copyright 固定為：
 
 text
 
-dbs-multi-district
-5. 建議 Vercel 專案用途
-新 Vercel 專案先作以下用途：
+© 2026 Scout System
 
-多區版佔位網址
-對外展示「系統即將推出 / 正在測試」
-提供「區接入教學」入口
-提供「提交接入 URL」入口（現階段可先用 mailto）
-提供「現已使用地區」展示頁
-6. 假前端階段建議頁面
-現階段建議先建立以下頁面：
+3. 現階段功能
+已包含：
+- 首頁選區
+- /setup 區接入教學
+- /onboard 區接入申請電郵草稿
+- /districts 現已使用地區
+- /downloads GS 模板下載
+- /updates 更新公告
+- /guide 使用指南
+- /admin 秘書後台
+- /adc 主考委任 / ADC 審批
+- Google Apps Script 多區模板
+- 主考指派模式反轉機制
 
-/
-首頁（佔位）
+4. 主考指派模式 / 反轉機制
+背景：
+原有做法是旅團主考優先。部分地區可能認為由同旅領袖優先考核自己旅團成員會引起公平觀感問題，因此加入可切換的控制。
 
-/setup
+設定欄位：
+Config → EXAMINER_ASSIGNMENT_MODE
+
+可選值：
+
+1) GROUP_PRIORITY
+中文：旅團主考優先
+行為：
+- 系統先找同旅 G 旅團主考
+- 找不到合適 G 時才派 D 區主考
+- 適合信任旅團內部先處理的地區
+
+2) DISTRICT_PRIORITY
+中文：只用區主考（公平模式）
+行為：
+- 系統只使用 D 區主考
+- 即使 D 主考本身是考生同旅團領袖，仍視為 ADC 已授權的區主考，可以獲派
+- G 旅團主考不會自動獲派
+- 適合 ADC 相信 D 區主考任命本身已足夠公平的地區
+
+3) NO_SAME_GROUP
+中文：同旅團不能擔任主考
+行為：
+- 所有具該章資格的主考進入候選池
+- 系統隨機分配
+- 只要主考所屬旅團與考生相同，不論 D 或 G 都不會獲派
+- 適合希望完全避免同旅團利益衝突觀感的地區
+
+控制方式：
+- 秘書後台新增「⚖️ 主考機制」分頁
+- 管理員可一鍵切換「旅團主考優先」、「只用區主考（公平模式）」或「同旅團不能擔任主考」
+- 改動寫入 Config
+- 不會重派已指派個案，只影響之後批核 / 重新分配
+
+5. /setup 頁應顯示什麼
+標題：
 區接入教學
 
-/onboard
-提交區接入 URL
-
-/districts
-現已使用地區
-
-/about
-關於此平台（可選）
-
-7. 假前端首頁建議文案
-以下可直接作首頁內容：
-
-DBS 3.0 多區專科徽章平台
-本平台為 SKWSCOUT SYSTEM 建立之多區專科徽章管理系統。
-
-現正進行多區版部署與接入準備。
-
-未來各區只需：
-
-建立空白 Google Sheet
-貼上標準 GS 檔
-執行初始化（彈窗會顯示 API Key，只顯示一次！立即複製）
-部署 Apps Script Web App
-到 /onboard 提交 URL + API Key
-等平台管理員開通
-即可使用系統。
-
-現階段開放內容
-區接入教學
-區接入申請
-已接入地區展示
-正式多區功能將於 DBS 3.0 多區版完成後逐步開放。
-
-頁底固定：
-
-text
-
-© 2026 SKWSCOUT SYSTEM
-8. /setup 頁應顯示什麼
-標題
-區接入教學
-
-內容重點
+內容重點：
 A. 你需要準備
-一個 Google 帳號
-一個空白 Google Sheet
-區名
-區碼（建議 3-4 個英文字）
-聯絡電郵
-群組資料
-主考資料（如適用）
+- 一個 Google 帳號
+- 一個空白 Google Sheet
+- 區名
+- 區碼（建議 3-4 個英文字）
+- 聯絡電郵
+- 群組資料
+- 主考資料（如適用）
+
 B. 接入步驟
-建立空白 Google Sheet
-開啟 Apps Script
-貼上標準 GS 檔
-Run setupSystem()
-填寫 Config
-部署為 Web App
-測試 getHealthCheck
-到 /onboard 提交 URL
+1. 建立空白 Google Sheet
+2. 開啟 Apps Script
+3. 貼上標準 GS 檔
+4. Run setupSystem()
+5. 填寫 Config
+6. 如需要，在秘書後台或 Config 選擇主考指派模式
+7. 部署為 Web App
+8. 測試 getHealthCheck
+9. 到 /onboard 產生接入申請電郵草稿，寄給平台管理員指定電郵
+
 C. 更新說明
 如平台日後發佈新章 / 小更新：
+- 只需貼上更新 GS patch
+- Run 指定更新函數
+- 不更新通常不會令系統失效，但新章或新功能可能未能使用
 
-只需貼上更新 GS patch
-Run 指定更新函數
-不更新通常不會令系統失效
-但新章可能未能使用
 D. 注意事項
-Copyright 固定保留 SKWSCOUT SYSTEM
-各區只負責本區資料與 Apps Script 部署
-多區前端 mapping 由平台管理員統一維護
-9. /onboard 頁應顯示什麼
-標題
+- Copyright 固定保留 Scout System
+- 各區只負責本區資料與 Apps Script 部署
+- 多區前端 mapping 由平台管理員統一維護
+
+6. /onboard 頁應顯示什麼
+標題：
 提交區接入申請
 
-欄位
-區名稱
-區碼
-聯絡人姓名
-聯絡人 Email
-Apps Script Web App URL
-API Key（setup 彈窗只顯示一次，忘記了請到 Sheet 選單 → 重新生成 API Key）
-備註（可選）
-送出方式
-現階段採用：
+欄位：
+- 區名稱
+- 區碼
+- 聯絡人姓名
+- 聯絡人 Email
+- Apps Script Web App URL
+- API Key（setup 彈窗只顯示一次，忘記了請到 Sheet 選單 → 重新生成 API Key）
+- 備註（可選）
 
-text
+送出方式：
+- 前端產生 mailto 電郵草稿
+- 不寫死地區電郵
+- 由使用者寄給平台管理員指定聯絡電郵
 
-mailto:ai@skwscout.org.hk
-主旨格式建議
+主旨格式建議：
 text
 
 [DBS 區接入申請] {區名稱} ({區碼})
-內容格式建議
+
+內容格式建議：
 text
 
 區名稱：
@@ -185,105 +166,82 @@ text
 Apps Script Web App URL：
 API Key：
 備註：
-10. /districts 頁應顯示什麼
-用途
+
+7. /districts 頁應顯示什麼
+用途：
 讓其他成員知道目前已有哪些區正在使用 / 測試此系統。
 
-建議分組
-已開通使用
-筲箕灣區（示例）
-測試中
-可日後加入其他區
-準備接入
-可留空或顯示「歡迎各區申請接入」
-額外說明
+建議分組：
+- 已開通使用
+  - 筲箕灣區（首個使用地區）
+- 測試中
+- 暫停服務
+
+額外說明：
 此頁同時可作宣傳用途，讓使用者主動通知自己所屬地區試用。
 
-11. 多區正式版的未來架構（先記錄，暫不實作）
-前端
-首頁選區
-localStorage 記住區碼
-URL 全站帶 d=
-lib/district.ts 維護 mapping
-根據 d= 選擇 Apps Script backend
-Backend
-各區自備 Google Sheet + Apps Script
-GS 需支援一鍵初始化
-GS 提供 getHealthCheck
-GS 由 Config 控制區名、區碼、token、前端網址
-管理方式
-各區提交 URL 給平台管理員
-平台管理員檢查 health check
-平台管理員加入 mapping
-redeploy 前端
-回覆該區「已開通可測試」
-12. 安全架構（API Key）
-資料安全
+8. 多區正式版架構
+前端：
+- 首頁選區
+- localStorage 記住區碼
+- URL 全站帶 d=
+- lib/district.ts 維護 mapping
+- 根據 d= 選擇 Apps Script backend
+
+Backend：
+- 各區自備 Google Sheet + Apps Script
+- GS 支援一鍵初始化
+- GS 提供 getHealthCheck
+- GS 由 Config 控制區名、區碼、token、前端網址、主考指派模式
+
+管理方式：
+- 各區提交 URL + API Key 給平台管理員
+- 平台管理員檢查 health check
+- 平台管理員加入 mapping
+- Vercel 設定 DBS_{區碼}_APIKEY
+- Redeploy 前端
+- 回覆該區「已開通可測試」
+
+9. 安全架構（API Key）
+資料安全：
 各區的資料存在 Google 伺服器（Google Sheet），不是某台不知名的電腦。
-API Key 安全
-各區的 API Key 只存在 Vercel 伺服器環境變數（DBS_{區碼}_APIKEY），不出現在任何前端代碼。
-Google Sheet 只存 API Key 的 SHA-256 雜湊值（API_KEY_HASH），連管理員也無法還原明文。
-攻擊門檻
-要取得某區的資料，攻擊者要麼攻破 Google 伺服器，要麼攻破 Vercel 伺服器。比存在自己家裡的電腦更安全。
-管理員工作流程
-收到區接入申請（含 URL + API Key）
-用 health + apiKey 測試連線
-在 district.ts 加入區 mapping
-在 Vercel 設定環境變數 DBS_{區碼}_APIKEY
-Redeploy
-回覆區方已開通
-區方忘記 API Key
-到 Sheet 選單 → 🏕️ DBS 管理 → 🔑 重新生成 API Key → 把新 Key 交給管理員 → 更新 Vercel env var → Redeploy
 
-13. GS 派發版未來必備條件（備忘）
-正式開始實作時，GS 應至少支援：
+API Key 安全：
+- 各區的 API Key 只存在 Vercel 伺服器環境變數（DBS_{區碼}_APIKEY）
+- 不出現在任何前端代碼
+- Google Sheet 只存 API Key 的 SHA-256 雜湊值（API_KEY_HASH）
+- 管理員也無法從雜湊值還原明文
 
-setupSystem()
-getHealthCheck
-DISTRICT_CODE
-DISTRICT_NAME
-FRONTEND_URL
-STAFF_TOKEN
-ADC_TOKEN
-Email links 自動帶 d=
-Application ID 與證書號不再寫死 SKW，而由 Config 組成
-Copyright 保持前端固定，不交區端改動
-14. 現階段 Git 首版可放什麼
-建議第一版只放：
+攻擊門檻：
+要取得某區資料，攻擊者要麼攻破 Google 伺服器，要麼攻破 Vercel 伺服器。比存在自己家裡的電腦更安全。
 
-一個簡單首頁
-/setup
-/onboard
-/districts
-README
-清楚寫明「DBS 3.0 多區版建置中」
-好處
-先佔 repo / 網址 / Vercel 位置
-之後正式開發時不會混淆現有穩定版
-可與現有 2.0 穩定版並行
-15. 建議 README 首句
+區方忘記 API Key：
+到 Sheet 選單 → 🏕️ DBS 管理 → 🔑 重新生成 API Key → 把新 Key 交給平台管理員 → 更新 Vercel env var → Redeploy。
+
+10. GS 派發版必備條件
+GS 應至少支援：
+- setupSystem()
+- getHealthCheck
+- DISTRICT_CODE
+- DISTRICT_NAME
+- FRONTEND_URL
+- STAFF_TOKEN
+- ADC_TOKEN
+- EXAMINER_ASSIGNMENT_MODE
+- Email links 自動帶 d=
+- Application ID 與證書號不寫死單一地區，而由 Config 組成
+- Copyright 保持前端固定，不交區端改動
+
+11. README 首句
 可直接用：
 
 Markdown
 
-DBS 3.0 多區版正在建立中。本專案為 SKWSCOUT SYSTEM 的多區專科徽章平台前端，現階段先提供區接入教學、接入申請及已接入地區資訊。
-16. 下一步（待正式開始開發時）
-當新 Repo 與新 Vercel 佔位完成後，下一階段再提供：
+DBS 3.0 多區版是由 Scout System 以中立第三方身份維護的多區專科徽章平台。筲箕灣區是首個已接入及實際使用本平台的地區。
 
-正式 3.0 前端網址
-新 repo 位置
-最新 Apps Script 多區派發版
-district mapping 首批名單
-之後再開始實作：
-
-首頁選區
-lib/district.ts
-假前端改正式骨架
-setup / onboard / districts 真頁面
-GS health check 對接
-17. 固定結語
-本平台由 SKWSCOUT SYSTEM 建立與維護，歡迎各區使用及接入。
+12. 固定結語
+本平台由 Scout System 以中立第三方身份維護，歡迎各區使用及接入。筲箕灣區只是首個使用地區，並非平台身份限制。
 
 text
 
-© 2026 SKWSCOUT SYSTEM
+© 2026 Scout System

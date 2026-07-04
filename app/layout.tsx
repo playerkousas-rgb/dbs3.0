@@ -3,7 +3,7 @@ import DistrictShell from '@/components/DistrictShell';
 
 export const metadata = {
   title: 'DBS 3.0 多區專科徽章平台',
-  description: 'SKWSCOUT SYSTEM multi-district badge platform',
+  description: 'Scout System neutral multi-district badge platform',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
