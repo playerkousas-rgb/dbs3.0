@@ -7,35 +7,36 @@
 
 ## (1) 一句話
 
-> 在該區的登入欄，**直接打你設在 Vercel 的 `SUPER_KEY`** 就得。
+> 在該區的登入欄，**輸入平台密碼**就可以用最高權限進入該區後台。
 
 不用打帳號、不用任何前綴。
 
 ---
 
-## (2) 設定
+## (2) 密碼放哪？（兩種，可同時用）
 
-就兩步，而且第 2 步通常唔需要做：
+### 2-1　各區自己的密碼（存在該區 Google Sheet）
 
-### 2-1　Vercel
-
-```text
-SUPER_KEY = 你的平台密碼
-```
-
-Settings → Environment Variables → 新增 → Redeploy。
-各區的 STAFF_TOKEN / ADC_TOKEN **不需要**放上來。
-
-### 2-2　各區 Google Sheet
-
-**通常唔需要做。** 貼上新 GS 模板 / 跑 `setupSystem()` 後，Config 會自動有一行：
+在該區 Google Sheet 選單：
 
 ```text
-SUPER_ACCOUNT = sheep     ← 只是一個標籤，Config 內冇、亦唔應該有密碼
+🏕️ DBS 管理 → 🔑 設定平台帳戶密碼
 ```
 
-- 想改名 → 選單 `🏕️ DBS 管理 → 🔐 設定平台帳戶標籤`
-- 想停用某區 → 清空該格（唔建議）
+- 最少 **4 個字**，長短由該區自定（1234 都可以，風險自負）
+- 密碼存在該區 Sheet 的 `Config → SUPER_PASSWORD`，方便多人管理、隨時自己改
+- 留空 ＝ 停用該區的後備通道
+
+### 2-2　平台自己的密碼（存在 Vercel，各區看不到）
+
+```text
+Vercel → Settings → Environment Variables → SUPER_KEY = 平台密碼
+```
+
+- 各區唔需要做任何事；改一次即全平台生效
+- 各區永遠睇唔到這組密碼（只用於平台管理員自己）
+
+> 兩者效果相同（最高權限）。日常唔用可以唔設，需要時才設。
 
 ---
 
@@ -45,37 +46,35 @@ SUPER_ACCOUNT = sheep     ← 只是一個標籤，Config 內冇、亦唔應該�
 
 | 想做什麼 | 去哪 | 輸入 |
 | --- | --- | --- |
-| 秘書後台（批核／派主考／證書／列印清單） | 該區 `/admin` | 你的平台密碼 |
-| ADC 主考審批 | 該區 `/adc` | 你的平台密碼 |
+| 秘書後台（批核／派主考／證書／列印清單） | 該區 `/admin` | 平台密碼 |
+| ADC 主考審批 | 該區 `/adc` | 平台密碼 |
 
-換區就換另一區入口，同一組密碼。
+登入欄支援瀏覽器儲存密碼，之後可以自動填入，唔需要每次打。
 
 ---
 
 ## (4) 運作方式
 
 ```text
-你打平台密碼
+你輸入密碼
    ↓
-/api/proxy（Vercel）比對 SUPER_KEY：對？
-   ↓ 對
-丟掉你打的密碼，改為在請求帶上 platformAdmin = true
+① 區密碼：送至該區 Apps Script 比對 Config 內的 SUPER_PASSWORD
+② 平台密碼：Vercel 伺服器先比對 SUPER_KEY，成功才代你帶上「已驗證」標記
    ↓
-該區 Apps Script 見到 platformAdmin + Config 有 SUPER_ACCOUNT → 最高權限
+該區確認身份 → 最高權限（該區）
 ```
 
-- 密碼只存在 Vercel 環境變數，**唔會傳去 Google**，各區永遠見唔到
-- 區方見到 `sheep` 呢個標籤都無用，冇密碼入唔到
-- 換 `SUPER_KEY` 唔需要逐區重設，改 Vercel 一處即全平台生效
+- 區密碼只存在該區 Sheet，平台唔會查問亦唔會備份
+- 平台密碼永遠唔會送到 Google
+- 登入欄打錯（唔係平台密碼）時，會照舊當作該區 staff / ADC 密鑰，所以區秘書日常操作完全不受影響
 
 ---
 
 ## (5) 幾點提醒
 
-- 平台密碼用長一點（20 字以上）、唔好同其他服務共用就夠；唔好寫在 Google Sheet 或群組訊息。
+- 密碼長短由各區自決；如要較安全，建議 12 字以上、唔好同其他服務共用。
 - 有 Vercel 專案權限的人睇得到 `SUPER_KEY`，所以 Vercel 帳戶只加自己人。
-- 登入欄打錯（唔係平台密碼）時，會照舊當係該區 staff / ADC 密鑰，所以區秘書日常操作完全不受影響。
-- `/api/proxy?...&action=proxyDebug`（診斷用）已改為需要 header `x-dbs-super-key: <SUPER_KEY>`，否則 401。
+- `/api/proxy?...&action=proxyDebug`（診斷用）需要 header `x-dbs-super-key: <SUPER_KEY>`，否則 401。
 
 ```text
 © 2026 Scout System

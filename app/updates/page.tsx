@@ -16,6 +16,16 @@ interface UpdateItem {
 
 const updates: UpdateItem[] = [
   {
+    version: '3.0.2',
+    title: '獎章表更新：2026 新訓練綱要',
+    date: '2026-09-21',
+    level: 'required',
+    summary: '童軍總會已更新訓練綱要。新版獎章表已加入模板：興趣組 33 個、技能組 35 個、服務組 17 個、教導組 27 個、海上活動 3 個、航空活動 3 個、其他 15 個，共 133 個；舊版已取消的章自動停用但保留記錄。',
+    impact: '不更新仍可運作，但考生只能報考舊獎章，新獎章（如抱石、動物飼養、立划板、立體打印、數據分析、攀登、網絡安全等）不會出現，已取消的章仍會顯示。',
+    action: '1. 到 /downloads 下載最新 GS 模板 → 2. 貼入 Apps Script（取代舊內容）並儲存 → 3. 回到 Google Sheet，選單「🏕️ DBS 管理 → 📚 更新獎章表（2026 新綱要）」執行一次 → 4. 如主考資格有改動，到 ExaminerMatrix 檢查後按「🔄 同步主考資料」。',
+    downloadHref: '/downloads/DBS_3_0_MULTI_DISTRICT.txt',
+  },
+  {
     version: '3.0.1',
     title: '主考指派反轉機制與中立平台署名更新',
     date: '2026-07-04',

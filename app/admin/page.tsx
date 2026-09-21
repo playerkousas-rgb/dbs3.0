@@ -173,21 +173,27 @@ export default function AdminPage() {
         <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
           請輸入系統管理密鑰
         </p>
-        <input
-          type="password"
-          value={token}
-          onChange={e => setToken(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && login()}
-          placeholder="輸入 STAFF_TOKEN"
-          style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '16px', boxSizing: 'border-box' }}
-        />
-        <button
-          onClick={login}
-          disabled={loading}
-          style={{ width: '100%', padding: '12px', background: '#003366', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
-        >
-          {loading ? '驗證中...' : '登入'}
-        </button>
+        <form onSubmit={e => { e.preventDefault(); login(); }}>
+          {/* 讓瀏覽器／密碼管理器可以儲存及自動填入密碼 */}
+          <input type="text" name="dbs_account" autoComplete="username" defaultValue="DBS" readOnly
+            style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }} />
+          <input
+            type="password"
+            name="dbs_password"
+            autoComplete="current-password"
+            value={token}
+            onChange={e => setToken(e.target.value)}
+            placeholder="輸入 STAFF_TOKEN"
+            style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '16px', boxSizing: 'border-box' }}
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            style={{ width: '100%', padding: '12px', background: '#003366', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+          >
+            {loading ? '驗證中...' : '登入'}
+          </button>
+        </form>
         {message && <p style={{ color: '#c62828', marginTop: '12px', fontSize: '14px' }}>{message}</p>}
       </div>
     );

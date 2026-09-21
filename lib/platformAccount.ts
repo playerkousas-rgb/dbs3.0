@@ -6,7 +6,7 @@
  * - 使用者在該區登入頁（ADC 密鑰／秘書 STAFF_TOKEN 欄）**直接打平台密碼**即可。
  * - 本代理核對成功後，會移除該欄位，改為注入 platformAdmin = true。
  * - 密碼永遠唔會送到 Google Sheet（Vercel 比對成功即丟棄）。
- * - 各區 Config 的 SUPER_ACCOUNT（預設 sheep）只作標籤／開關：清空＝停用該區後備通道。
+ * - 各區亦可在自己的 Google Sheet Config 設定平台帳戶密碼（SUPER_PASSWORD，最少 4 字）。
  */
 
 import crypto from 'crypto';

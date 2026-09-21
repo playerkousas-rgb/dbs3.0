@@ -84,7 +84,8 @@ function initializeSheets(ss) {
         ['FRONTEND_URL', CONFIG.DEFAULT_FRONTEND_URL, '前端網址（已預設平台網址，一般不用改）'],
         ['STAFF_TOKEN', 'change-this-staff-token', '【必填】秘書後台密鑰（請立即更改）'],
         ['ADC_TOKEN', 'change-this-adc-token', '【必填】ADC 審批密鑰（請立即更改）'],
-        ['SUPER_ACCOUNT', 'sheep', '平台帳戶標籤（預設 sheep）。平台密碼只在平台端（Vercel）驗證，本表沒有、亦不應有密碼；清空此格＝停用此區的平台後備通道。'],
+        ['SUPER_ACCOUNT', 'sheep', '平台帳戶名稱（預設 sheep）。'],
+        ['SUPER_PASSWORD', '', '【選填】平台帳戶密碼（最少 4 字）。填了之後，在 /admin 或 /adc 密鑰欄輸入此密碼，即可用最高權限登入本區。密碼由本區自行保管，最少 4 字，長短自定；留空＝停用。'],
         ['API_KEY_HASH', '', 'setup 自動生成；API_KEY 的 SHA-256 雜湊值，用於驗證前端請求。明文不會儲存在此。'],
         ['EXAMINER_ASSIGNMENT_MODE', 'GROUP_PRIORITY', '主考自動指派模式：GROUP_PRIORITY=同旅 G 旅團主考優先；DISTRICT_PRIORITY=只用 D 區主考；NO_SAME_GROUP=所有合資格主考隨機但排除同旅團'],
         ['CERT_SIGNER_TITLE_CN', '助理區總監(童軍)', '證書簽發人中文'],
@@ -156,12 +157,16 @@ function initializeSheets(ss) {
 
 function getDefaultBadgeCodesData_() {
   return [
+    // ═══ 2026 新訓練綱要（資料來源：scoutsinfohub.org.hk/scout-training-scheme）═══
+    // ── 興趣組（Interest）──
     ["釣魚", "IAN", "Angler", "興趣", "Interest", "興趣 - 釣魚", "TRUE", "1", ""],
-    ["愛護動物", "IAC", "Animal Care", "興趣", "Interest", "興趣 - 愛護動物", "TRUE", "1", ""],
     ["射箭", "IAR", "Archery", "興趣", "Interest", "興趣 - 射箭", "TRUE", "1", ""],
     ["藝術", "IAT", "Artist", "興趣", "Interest", "興趣 - 藝術", "TRUE", "1", ""],
     ["運動", "IAH", "Athlete", "興趣", "Interest", "興趣 - 運動", "TRUE", "1", ""],
+    ["觀鳥", "IBW", "Birdwatcher", "興趣", "Interest", "興趣 - 觀鳥", "TRUE", "1", ""],
+    ["抱石", "IBO", "Boulderer", "興趣", "Interest", "興趣 - 抱石", "TRUE", "1", ""],
     ["營地烹飪", "ICC", "Camp Cook", "興趣", "Interest", "興趣 - 營地烹飪", "TRUE", "1", ""],
+    ["營火", "ICF", "Campfire Host", "興趣", "Interest", "興趣 - 營火", "TRUE", "1", ""],
     ["獨木舟", "ICA", "Canoeist", "興趣", "Interest", "興趣 - 獨木舟", "TRUE", "1", ""],
     ["搜集", "ICO", "Collector", "興趣", "Interest", "興趣 - 搜集", "TRUE", "1", ""],
     ["電腦", "ICP", "Computer", "興趣", "Interest", "興趣 - 電腦", "TRUE", "1", ""],
@@ -177,36 +182,35 @@ function getDefaultBadgeCodesData_() {
     ["音樂", "IMU", "Musician", "興趣", "Interest", "興趣 - 音樂", "TRUE", "1", ""],
     ["自然", "INA", "Naturalist", "興趣", "Interest", "興趣 - 自然", "TRUE", "1", ""],
     ["公園定向", "IPO", "Park Orienteer", "興趣", "Interest", "興趣 - 公園定向", "TRUE", "1", ""],
+    ["動物飼養", "IPK", "Petkeeper", "興趣", "Interest", "興趣 - 動物飼養", "TRUE", "1", ""],
     ["攝影", "IPH", "Photographer", "興趣", "Interest", "興趣 - 攝影", "TRUE", "1", ""],
     ["划艇", "IRO", "Rowing Boatman", "興趣", "Interest", "興趣 - 划艇", "TRUE", "1", ""],
     ["風帆", "ISA", "Sailor", "興趣", "Interest", "興趣 - 風帆", "TRUE", "1", ""],
     ["農務", "ISM", "Smallholder", "興趣", "Interest", "興趣 - 農務", "TRUE", "1", ""],
+    ["立划板", "ISU", "Stand Up Paddleboarder", "興趣", "Interest", "興趣 - 立划板", "TRUE", "1", ""],
+    ["立划板水球", "ISP", "Stand Up Paddling Polo", "興趣", "Interest", "興趣 - 立划板水球", "TRUE", "1", ""],
     ["游泳", "ISW", "Swimmer", "興趣", "Interest", "興趣 - 游泳", "TRUE", "1", ""],
     ["旅遊", "ITO", "Tourism", "興趣", "Interest", "興趣 - 旅遊", "TRUE", "1", ""],
     ["滑浪風帆", "IWI", "Windsurfer", "興趣", "Interest", "興趣 - 滑浪風帆", "TRUE", "1", ""],
-    ["觀鳥", "IBW", "Birdwatcher", "興趣", "Interest", "興趣 - 觀鳥", "TRUE", "1", ""],
+    // ── 技能組（Pursuit）──
+    ["立體打印", "P3D", "3D Printing Technician", "技能", "Pursuit", "技能 - 立體打印", "TRUE", "1", ""],
+    ["沿繩下降", "PAB", "Abseiler", "技能", "Pursuit", "技能 - 沿繩下降", "TRUE", "1", ""],
     ["射箭", "PAR", "Archery", "技能", "Pursuit", "技能 - 射箭", "TRUE", "1", ""],
     ["天象", "PAS", "Astronomer", "技能", "Pursuit", "技能 - 天象", "TRUE", "1", ""],
     ["航空領航", "PAN", "Aviation Navigator", "技能", "Pursuit", "技能 - 航空領航", "TRUE", "1", ""],
-    ["原野烹飪", "PBA", "Backwoods cook", "技能", "Pursuit", "技能 - 原野烹飪", "TRUE", "1", ""],
-    ["艇長", "PBO", "Boatswain", "技能", "Pursuit", "技能 - 艇長", "TRUE", "1", ""],
+    ["原野烹飪", "PBA", "Backwoods Cook", "技能", "Pursuit", "技能 - 原野烹飪", "TRUE", "1", ""],
     ["露營", "PCM", "Camper", "技能", "Pursuit", "技能 - 露營", "TRUE", "1", ""],
-    ["獨木舟水球", "PCP", "Canoe Polo", "技能", "Pursuit", "技能 - 獨木舟水球", "TRUE", "1", ""],
     ["獨木舟", "PCA", "Canoeist", "技能", "Pursuit", "技能 - 獨木舟", "TRUE", "1", ""],
-    ["通訊", "PCO", "Communicator", "技能", "Pursuit", "技能 - 通訊 (A)", "TRUE", "2", ""],
-    ["通訊", "PCO", "Communicator", "技能", "Pursuit", "技能 - 通訊 (B)", "TRUE", "2", ""],
-    ["電腦", "PCT", "Computer", "技能", "Pursuit", "技能 - 電腦", "TRUE", "1", ""],
-    ["烹飪 (中式)", "PCD", "Cook (Chinese Dishes)", "技能", "Pursuit", "技能 - 烹飪 (中式)", "TRUE", "1", ""],
-    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (釘書)", "TRUE", "5", ""],
-    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (木工)", "TRUE", "5", ""],
-    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (皮工)", "TRUE", "5", ""],
-    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (印刷)", "TRUE", "5", ""],
-    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝 (籐工)", "TRUE", "5", ""],
+    ["獨木舟水球", "PCP", "Canoe Polo", "技能", "Pursuit", "技能 - 獨木舟水球", "TRUE", "1", ""],
+    ["攀登", "PCL", "Climber", "技能", "Pursuit", "技能 - 攀登", "TRUE", "1", ""],
+    ["通訊", "PCO", "Communicator", "技能", "Pursuit", "技能 - 通訊", "TRUE", "1", ""],
+    ["烹飪", "PCD", "Cook", "技能", "Pursuit", "技能 - 烹飪", "TRUE", "1", ""],
+    ["手藝", "PCR", "Craftsman", "技能", "Pursuit", "技能 - 手藝", "TRUE", "1", ""],
+    ["數據分析", "PDA", "Data Analyst", "技能", "Pursuit", "技能 - 數據分析", "TRUE", "1", ""],
     ["電子", "PEL", "Electronics", "技能", "Pursuit", "技能 - 電子", "TRUE", "1", ""],
     ["探險", "PEX", "Explorer", "技能", "Pursuit", "技能 - 探險", "TRUE", "1", ""],
+    ["模擬飛行", "PFS", "Flight Simulator", "技能", "Pursuit", "技能 - 模擬飛行", "TRUE", "1", ""],
     ["步操", "PFO", "Footdrill", "技能", "Pursuit", "技能 - 步操", "TRUE", "1", ""],
-    ["模擬飛行", "PFS", "Flight Simulator", "技能", "Pursuit", "技能 - 模擬飛行", "TRUE", "1", "STC"],
-    ["獨木舟國際賽艇", "PIR", "International Racing Kayak", "技能", "Pursuit", "技能 - 獨木舟國際賽艇", "TRUE", "1", ""],
     ["地圖繪製", "PMM", "Map Maker", "技能", "Pursuit", "技能 - 地圖繪製", "TRUE", "1", ""],
     ["地圖閱讀", "PMR", "Map Reader", "技能", "Pursuit", "技能 - 地圖閱讀", "TRUE", "1", ""],
     ["射擊", "PMS", "Marksman", "技能", "Pursuit", "技能 - 射擊", "TRUE", "1", ""],
@@ -219,70 +223,101 @@ function getDefaultBadgeCodesData_() {
     ["野外定向", "POR", "Orienteer", "技能", "Pursuit", "技能 - 野外定向", "TRUE", "1", ""],
     ["先鋒工程", "PPI", "Pioneer", "技能", "Pursuit", "技能 - 先鋒工程", "TRUE", "1", ""],
     ["編程", "PPR", "Programmer", "技能", "Pursuit", "技能 - 編程", "TRUE", "1", ""],
-    ["風帆賽艇舵手", "PRH", "Race Helmsman", "技能", "Pursuit", "技能 - 風帆賽艇舵手", "TRUE", "1", ""],
     ["風帆", "PSA", "Sailor", "技能", "Pursuit", "技能 - 風帆", "TRUE", "1", ""],
     ["徒手潛水", "PSD", "Skin Diver", "技能", "Pursuit", "技能 - 徒手潛水", "TRUE", "1", ""],
+    ["艇長", "PBO", "Skipper", "技能", "Pursuit", "技能 - 艇長", "TRUE", "1", ""],
     ["體育", "PSP", "Sportsman", "技能", "Pursuit", "技能 - 體育", "TRUE", "1", ""],
     ["樹木護理", "PTC", "Tree Carer", "技能", "Pursuit", "技能 - 樹木護理", "TRUE", "1", ""],
-    ["國際友誼", "PWF", "World Friendship", "技能", "Pursuit", "技能 - 國際友誼", "TRUE", "1", ""],
-    ["營地管理", "SCW", "Camp Warden", "服務", "Service", "服務 - 營地管理", "TRUE", "1", ""],
-    ["獨木舟救生", "SCR", "Canoe Rescuer", "服務", "Service", "服務 - 獨木舟救生", "TRUE", "1", ""],
-    ["公民", "SCI", "Civis", "服務", "Service", "服務 - 公民", "TRUE", "1", ""],
-    ["護養", "SCO", "Conservator", "服務", "Service", "服務 - 護養", "TRUE", "2", "Accept - 舊舵手"],
-    ["共融", "SDA", "Disability Awareness", "服務", "Service", "服務 - 共融", "TRUE", "1", ""],
-    ["環境保護", "SEP", "Environmental Protection", "服務", "Service", "服務 - 環境保護", "TRUE", "1", ""],
+    // ── 服務組（Service）──
+    ["愛護動物", "SAC", "Animal Carer", "服務", "Service", "服務 - 愛護動物", "TRUE", "1", ""],
+    ["公民", "SCI", "Civics", "服務", "Service", "服務 - 公民", "TRUE", "1", ""],
+    ["網絡安全", "SCY", "Cybersecurity Analyst", "服務", "Service", "服務 - 網絡安全", "TRUE", "1", ""],
+    ["多元共融", "SDI", "Diversity & Inclusion", "服務", "Service", "服務 - 多元共融", "TRUE", "1", ""],
     ["消防", "SFI", "Fireman", "服務", "Service", "服務 - 消防", "TRUE", "1", ""],
     ["急救", "SFA", "First Aider", "服務", "Service", "服務 - 急救", "TRUE", "1", ""],
     ["指引", "SGU", "Guide", "服務", "Service", "服務 - 指引", "TRUE", "1", ""],
-    ["語言", "SIN", "Interpreter", "服務", "Service", "服務 - 語言 (英語)", "TRUE", "2", ""],
-    ["語言", "SIN", "Interpreter", "服務", "Service", "服務 - 語言 (普通話)", "TRUE", "2", ""],
+    ["語言", "SIN", "Interpreter", "服務", "Service", "服務 - 語言", "TRUE", "1", ""],
     ["工藝", "SJO", "Jobman", "服務", "Service", "服務 - 工藝", "TRUE", "1", ""],
     ["拯溺", "SLI", "Lifesaver", "服務", "Service", "服務 - 拯溺", "TRUE", "1", ""],
     ["精神健康", "SMH", "Mental Health Ambassador", "服務", "Service", "服務 - 精神健康", "TRUE", "1", ""],
     ["食物營養", "SNU", "Nutritionist", "服務", "Service", "服務 - 食物營養", "TRUE", "1", ""],
     ["領港", "SPI", "Pilot", "服務", "Service", "服務 - 領港", "TRUE", "1", ""],
-    ["公共衛生", "SPH", "Public Health Ambassador", "服務", "Service", "服務 - 公共衛生", "TRUE", "1", ""],
+    ["公共衞生", "SPH", "Public Health Ambassador", "服務", "Service", "服務 - 公共衞生", "TRUE", "1", ""],
     ["物資管理", "SQU", "Quartermaster", "服務", "Service", "服務 - 物資管理", "TRUE", "1", ""],
     ["秘書", "SSE", "Secretary", "服務", "Service", "服務 - 秘書", "TRUE", "1", ""],
+    ["國際友誼", "SWF", "World Friendship Ambassador", "服務", "Service", "服務 - 國際友誼", "TRUE", "1", ""],
+    // ── 教導組（Instructor）──
+    ["釣魚", "INAG", "Angler", "教導", "Instructor", "教導 - 釣魚", "TRUE", "1", ""],
+    ["抱石", "INBO", "Boulderer", "教導", "Instructor", "教導 - 抱石", "TRUE", "1", ""],
+    ["營火", "INCF", "Campfire Host", "教導", "Instructor", "教導 - 營火", "TRUE", "1", ""],
+    ["單車", "INCY", "Cyclist", "教導", "Instructor", "教導 - 單車", "TRUE", "1", ""],
+    ["模型製作", "INMO", "Model Maker", "教導", "Instructor", "教導 - 模型製作", "TRUE", "1", ""],
+    ["攝影", "INPH", "Photographer", "教導", "Instructor", "教導 - 攝影", "TRUE", "1", ""],
+    ["風帆", "INSA", "Sailor", "教導", "Instructor", "教導 - 風帆", "TRUE", "1", ""],
+    ["游泳", "INSW", "Swimmer", "教導", "Instructor", "教導 - 游泳", "TRUE", "1", ""],
     ["天象", "INAS", "Astronomer", "教導", "Instructor", "教導 - 天象", "TRUE", "1", ""],
-    ["原野烹飪", "INBA", "Backswoodcook", "教導", "Instructor", "教導 - 原野烹飪", "TRUE", "1", ""],
+    ["原野烹飪", "INBA", "Backwoods Cook", "教導", "Instructor", "教導 - 原野烹飪", "TRUE", "1", ""],
     ["露營", "INCA", "Camper", "教導", "Instructor", "教導 - 露營", "TRUE", "1", ""],
     ["通訊", "INCM", "Communicator", "教導", "Instructor", "教導 - 通訊", "TRUE", "1", ""],
-    ["護養", "INCO", "Conservator", "教導", "Instructor", "教導 - 護養", "TRUE", "1", ""],
-    ["烹飪（中式）", "INCD", "Cook (Chinese Dishes)", "教導", "Instructor", "教導 - 烹飪（中式）", "TRUE", "1", ""],
-    ["單車", "INCY", "Cyclist", "教導", "Instructor", "教導 - 單車", "TRUE", "1", ""],
-    ["模型飛行", "INFS", "Flight Simulator", "教導", "Instructor", "教導 - 模型飛行", "TRUE", "1", ""],
-    ["林務", "INFO", "Forester", "教導", "Instructor", "教導 - 林務", "TRUE", "1", ""],
-    ["拯溺", "INLI", "Lifesaver", "教導", "Instructor", "教導 - 拯溺", "TRUE", "1", ""],
+    ["烹飪", "INCD", "Cook", "教導", "Instructor", "教導 - 烹飪", "TRUE", "1", ""],
+    ["手藝", "INCR", "Craftsman", "教導", "Instructor", "教導 - 手藝", "TRUE", "1", ""],
+    ["模擬飛行", "INFS", "Flight Simulator", "教導", "Instructor", "教導 - 模擬飛行", "TRUE", "1", ""],
     ["地圖繪製", "INMM", "Map Maker", "教導", "Instructor", "教導 - 地圖繪製", "TRUE", "1", ""],
+    ["地圖閱讀", "INMR", "Map Reader", "教導", "Instructor", "教導 - 地圖閱讀", "TRUE", "1", ""],
     ["機械", "INMC", "Mechanic", "教導", "Instructor", "教導 - 機械", "TRUE", "1", ""],
     ["氣象", "INME", "Meteorologist", "教導", "Instructor", "教導 - 氣象", "TRUE", "1", ""],
     ["多媒體創作", "INMD", "Multimedia Designer", "教導", "Instructor", "教導 - 多媒體創作", "TRUE", "1", ""],
     ["觀察", "INOB", "Observer", "教導", "Instructor", "教導 - 觀察", "TRUE", "1", ""],
     ["野外定向", "INOR", "Orienteer", "教導", "Instructor", "教導 - 野外定向", "TRUE", "1", ""],
-    ["攝影", "INPH", "Photographer", "教導", "Instructor", "教導 - 攝影", "TRUE", "1", ""],
     ["先鋒工程", "INPI", "Pioneer", "教導", "Instructor", "教導 - 先鋒工程", "TRUE", "1", ""],
-    ["風帆", "INSA", "Sailor", "教導", "Instructor", "教導 - 風帆", "TRUE", "1", ""],
-    ["游泳", "INSW", "Swimmer", "教導", "Instructor", "教導 - 游泳", "TRUE", "1", ""],
+    ["編程", "INPR", "Programmer", "教導", "Instructor", "教導 - 編程", "TRUE", "1", ""],
     ["樹木護理", "INTC", "Tree Carer", "教導", "Instructor", "教導 - 樹木護理", "TRUE", "1", ""],
-    ["社區參與章", "CIB", "Community Involvement Badge", "其他", "Other", "社區參與", "TRUE", "1", ""],
-    ["艇工", "SOA", "Oarsman", "其他", "Other", "艇工", "TRUE", "1", ""],
-    ["水手", "SBM", "Boatman", "其他", "Other", "水手", "TRUE", "1", ""],
-    ["水手長", "SBW", "Boatswain", "其他", "Other", "水手長", "TRUE", "1", ""],
-    ["初級航空活動", "BAA", "Basic Air Activity", "其他", "Other", "初級航空活動", "TRUE", "1", ""],
-    ["中級航空活動", "IAA", "Intermediate Air Activity", "其他", "Other", "中級航空活動", "TRUE", "1", ""],
-    ["高級航空活動", "AAA", "Advanced Air Activity", "其他", "Other", "高級航空活動", "TRUE", "1", ""],
-    ["繩結", "SKC", "Knotting", "其他", "Other", "繩結", "TRUE", "1", ""],
-    ["領導才", "SLTC", "Leadership Training", "其他", "Other", "領導才", "TRUE", "1", ""],
-    ["宗教章", "SRB", "Religious Badge", "其他", "Other", "宗教章", "TRUE", "1", ""],
-    ["維護自然世界章", "WCB", "World Conservation Badge", "其他", "Other", "維護自然世界", "TRUE", "1", ""],
-    ["世界童軍環境章", "WSE", "World Scout Environment Badge", "其他", "Other", "世界童軍環境", "TRUE", "1", ""],
-    ["深資童軍先修章", "VSL", "Venture Scout Link Badge", "其他", "Other", "深資童軍先修", "TRUE", "1", ""],
-    ["航空", "SAM", "Airman", "舊", "", "航空", "", "1", "Delete"],
-    ["高級航空", "SSA", "Senior Airman", "舊", "", "高級航空", "", "1", "Delete"],
-    ["優異航空", "SMA", "Master Airman", "舊", "", "優異航空", "", "1", "Delete"],
-    ["副舵手", "SCM", "Coxswain's Mate", "舊", "", "副舵手", "", "1", "Delete"],
-    ["舵手", "SCO", "Coxswain", "舊", "", "舵手", "", "2", "Delete"]
+    ["護養", "INCO", "Conservator", "教導", "Instructor", "教導 - 護養", "TRUE", "1", ""],
+    ["拯溺", "INLI", "Lifesaver", "教導", "Instructor", "教導 - 拯溺", "TRUE", "1", ""],
+    // ── 海上組（Sea）──
+    ["艇工", "SOA", "Oarsman", "海上", "Sea", "海上 - 艇工", "TRUE", "1", ""],
+    ["水手", "SBM", "Boatman", "海上", "Sea", "海上 - 水手", "TRUE", "1", ""],
+    ["水手長", "SBW", "Boatswain", "海上", "Sea", "海上 - 水手長", "TRUE", "1", ""],
+    // ── 航空組（Air）──
+    ["初級航空活動", "BAA", "Basic Air Activity", "航空", "Air", "航空 - 初級航空活動", "TRUE", "1", ""],
+    ["中級航空活動", "IAA", "Intermediate Air Activity", "航空", "Air", "航空 - 中級航空活動", "TRUE", "1", ""],
+    ["高級航空活動", "AAA", "Advanced Air Activity", "航空", "Air", "航空 - 高級航空活動", "TRUE", "1", ""],
+    // ── 其他組（Others）──
+    ["和平使者章", "MOP", "Messengers of Peace", "其他", "Others", "其他 - 和平使者章", "TRUE", "1", ""],
+    ["走塑達人章", "PTT", "Plastic Tide Turners", "其他", "Others", "其他 - 走塑達人章", "TRUE", "1", ""],
+    ["自然守護者章", "CFN", "Champions for Nature", "其他", "Others", "其他 - 自然守護者章", "TRUE", "1", ""],
+    ["日光善用者章", "SGS", "Scouts Go Solar", "其他", "Others", "其他 - 日光善用者章", "TRUE", "1", ""],
+    ["服務獎章", "SVF", "Service Flash", "其他", "Others", "其他 - 服務獎章", "TRUE", "1", ""],
+    ["領導才獎章", "LDA", "Leadership Award", "其他", "Others", "其他 - 領導才獎章", "TRUE", "1", ""],
+    ["小隊活動巾圈", "PAW", "Patrol Activity Woggle", "其他", "Others", "其他 - 小隊活動巾圈", "TRUE", "1", ""],
+    ["宗教章", "SRB", "Religious Badge", "其他", "Others", "其他 - 宗教章", "TRUE", "1", ""],
+    ["深資童軍先修章", "VSL", "Venture Scout Link Badge", "其他", "Others", "其他 - 深資童軍先修章", "TRUE", "1", ""],
+    ["香港青年獎勵計劃", "AYP", "The Hong Kong Award for Young People", "其他", "Others", "其他 - 香港青年獎勵計劃", "TRUE", "1", ""],
+    ["防騙先鋒章", "ADB", "Anti-Deception Badge", "其他", "Others", "其他 - 防騙先鋒章", "TRUE", "1", ""],
+    ["保護兒童章", "CPB", "Child Protection Badge", "其他", "Others", "其他 - 保護兒童章", "TRUE", "1", ""],
+    ["禁毒章", "ATD", "Anti-Drug Badge", "其他", "Others", "其他 - 禁毒章", "TRUE", "1", ""],
+    ["社區應急先鋒章", "CER", "Community Emergency Responder Badge", "其他", "Others", "其他 - 社區應急先鋒章", "TRUE", "1", ""],
+    ["環保先鋒章", "GPB", "Green Pioneer Badge", "其他", "Others", "其他 - 環保先鋒章", "TRUE", "1", ""],
+    // ═══ 舊版獎章（保留記錄，不影響新報考）═══
+    ["愛護動物", "IAC", "Animal Care", "舊", "Legacy", "舊 - 愛護動物", "FALSE", "1", "已改為服務組「愛護動物 Animal Carer」"],
+    ["國際友誼", "PWF", "World Friendship", "舊", "Legacy", "舊 - 國際友誼", "FALSE", "1", "已改為服務組「國際友誼 World Friendship Ambassador」"],
+    ["獨木舟國際賽艇", "PIR", "International Racing Kayak", "舊", "Legacy", "舊 - 獨木舟國際賽艇", "FALSE", "1", "2026 綱要已取消"],
+    ["風帆賽艇舵手", "PRH", "Race Helmsman", "舊", "Legacy", "舊 - 風帆賽艇舵手", "FALSE", "1", "2026 綱要已取消"],
+    ["營地管理", "SCW", "Camp Warden", "舊", "Legacy", "舊 - 營地管理", "FALSE", "1", "2026 綱要已取消"],
+    ["獨木舟救生", "SCR", "Canoe Rescuer", "舊", "Legacy", "舊 - 獨木舟救生", "FALSE", "1", "2026 綱要已取消"],
+    ["共融", "SDA", "Disability Awareness", "舊", "Legacy", "舊 - 共融", "FALSE", "1", "已改為服務組「多元共融」"],
+    ["環境保護", "SEP", "Environmental Protection", "舊", "Legacy", "舊 - 環境保護", "FALSE", "1", "已改為其他組「環保先鋒章」"],
+    ["林務", "INFO", "Forester", "舊", "Legacy", "舊 - 林務", "FALSE", "1", "2026 綱要已取消"],
+    ["社區參與章", "CIB", "Community Involvement Badge", "舊", "Legacy", "舊 - 社區參與章", "FALSE", "1", "2026 綱要已取消"],
+    ["繩結", "SKC", "Knotting", "舊", "Legacy", "舊 - 繩結", "FALSE", "1", "2026 綱要已取消"],
+    ["領導才", "SLTC", "Leadership Training", "舊", "Legacy", "舊 - 領導才", "FALSE", "1", "已改為其他組「領導才獎章」"],
+    ["維護自然世界章", "WCB", "World Conservation Badge", "舊", "Legacy", "舊 - 維護自然世界章", "FALSE", "1", "2026 綱要已取消"],
+    ["世界童軍環境章", "WSE", "World Scout Environment Badge", "舊", "Legacy", "舊 - 世界童軍環境章", "FALSE", "1", "2026 綱要已取消"],
+    ["航空", "SAM", "Airman", "舊", "Legacy", "舊 - 航空", "FALSE", "1", ""],
+    ["高級航空", "SSA", "Senior Airman", "舊", "Legacy", "舊 - 高級航空", "FALSE", "1", ""],
+    ["優異航空", "SMA", "Master Airman", "舊", "Legacy", "舊 - 優異航空", "FALSE", "1", ""],
+    ["副舵手", "SCM", "Coxswain's Mate", "舊", "Legacy", "舊 - 副舵手", "FALSE", "1", ""],
+    ["舵手", "SCO", "Coxswain", "舊", "Legacy", "舊 - 舵手", "FALSE", "1", ""],
   ];
 }
 
@@ -615,10 +650,10 @@ function doGet(e) {
       case 'getActiveExaminers': result = apiGetActiveExaminers(); break;
       case 'getBadgeCodes': result = apiGetBadgeCodes(); break;
       case 'getGroups': result = apiGetGroups(); break;
-      case 'getPrintList': result = apiGetPrintList({ staffToken: e.parameter.token, superAccount: e.parameter.superAccount }); break;
+      case 'getPrintList': result = apiGetPrintList({ staffToken: e.parameter.token, platformAdmin: e.parameter.platformAdmin === 'true' }); break;
       case 'verifyLeaderToken': result = { success: true, token: e.parameter.token }; break;
       case 'verifyExaminerToken': result = { success: true, token: e.parameter.token }; break;
-      case 'syncExaminers': result = apiSyncExaminers({ staffToken: e.parameter.token, superAccount: e.parameter.superAccount }); break; // 支援 GET 測試
+      case 'syncExaminers': result = apiSyncExaminers({ staffToken: e.parameter.token, platformAdmin: e.parameter.platformAdmin === 'true' }); break; // 支援 GET 測試
       case 'getHealthCheck': result = apiGetHealthCheck(); break;
       default: result = { success: false, error: '未知動作' };
     }
@@ -2177,6 +2212,7 @@ function setupSystem() {
     ensureConfigRow_(configSheet, 'STAFF_TOKEN', '', 'setup 自動生成；秘書後台密鑰。');
     ensureConfigRow_(configSheet, 'ADC_TOKEN', '', 'setup 自動生成；ADC 審批密鑰。');
     ensureConfigRow_(configSheet, 'SUPER_ACCOUNT', 'sheep', '平台帳戶標籤（預設 sheep）。平台密碼只在平台端（Vercel）驗證，本表沒有、亦不應有密碼；清空此格＝停用此區的平台後備通道。');
+    ensureConfigRow_(configSheet, 'SUPER_PASSWORD', '', '【選填】平台帳戶密碼（最少 4 字）。留空＝停用。');
   }
 
   // ★ 自動生成 API Key（只存 hash）
@@ -2501,8 +2537,9 @@ function onOpen() {
     .addItem('🔧 重建 Matrix 表頭（依 BadgeCodes）', 'rebuildMatrixHeaderFromBadgeCodes')
     .addSeparator()
     .addItem('🔑 重新生成 API Key', 'regenerateApiKeyMenu')
-    .addItem('🔐 設定平台帳戶標籤', 'setSuperAccountMenu')
-    .addItem('🧹 停用平台帳戶後備通道', 'clearSuperAccountMenu')
+    .addItem('🔐 設定平台帳戶', 'setSuperAccountMenu')
+    .addItem('🔑 設定平台帳戶密碼', 'setSuperPasswordMenu')
+    .addItem('📚 更新獎章表（2026 新綱要）', 'updateBadgeCodesNewScheme')
     .addItem('👀 顯示進階工作表', 'showAdvancedSheets')
     .addItem('🙈 隱藏進階工作表', 'hideAdvancedSheets')
     .addItem('📊 查看同步狀態', 'showSyncStatus')
@@ -2513,29 +2550,123 @@ function onOpen() {
 /* ---------- 平台帳戶（後備通道）選單 ---------- */
 function ensureSuperAccountRow_() {
   var sh = getSpreadsheet().getSheetByName('Config');
-  if (!sh) return false;
-  return ensureConfigRow_(sh, 'SUPER_ACCOUNT', 'sheep', '平台帳戶標籤（預設 sheep）。平台密碼只在平台端（Vercel）驗證，本表沒有、亦不應有密碼；清空此格＝停用此區的平台後備通道。');
+  if (!sh) return;
+  ensureConfigRow_(sh, 'SUPER_ACCOUNT', 'sheep', '平台帳戶名稱（預設 sheep）。');
+  ensureConfigRow_(sh, 'SUPER_PASSWORD', '', '【選填】平台帳戶密碼（最少 4 字）。留空＝停用。');
 }
 
 function setSuperAccountMenu() {
   ensureSuperAccountRow_();
   var ui = SpreadsheetApp.getUi();
   var res = ui.prompt(
-    '設定平台帳戶',
-    '輸入平台帳戶標籤（預設 sheep）。\n注意：本表只係一個標籤，密碼唔會、亦唔應該存在這裡。',
+    '設定平台帳戶名稱',
+    '輸入平台帳戶名稱（預設 sheep）：',
     ui.ButtonSet.OK_CANCEL
   );
   if (res.getSelectedButton() !== ui.Button.OK) return;
   var raw = String(res.getResponseText() || '').trim();
   if (!raw) { ui.alert('未輸入任何內容，已取消。'); return; }
   setConfig('SUPER_ACCOUNT', raw);
-  ui.alert('✅ 已設定', 'Config → SUPER_ACCOUNT = ' + raw + '\n（此區已啟用平台帳戶後備通道）', ui.ButtonSet.OK);
+  ui.alert('✅ 已設定', 'Config → SUPER_ACCOUNT = ' + raw, ui.ButtonSet.OK);
 }
 
-function clearSuperAccountMenu() {
+/** 設定本區的平台帳戶密碼（最少 4 字，長短由本區自定） */
+function setSuperPasswordMenu() {
+  ensureSuperAccountRow_();
   var ui = SpreadsheetApp.getUi();
-  setConfig('SUPER_ACCOUNT', '');
-  ui.alert('已停用平台帳戶後備通道（此區將不再接受平台帳戶登入）。');
+  var res = ui.prompt(
+    '設定平台帳戶密碼',
+    '輸入密碼（最少 4 字）。\n此密碼存在本表 Config，本區可隨時更改；輸入此密碼即可用最高權限登入本區後台。',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (res.getSelectedButton() !== ui.Button.OK) return;
+  var raw = String(res.getResponseText() || '').trim();
+  if (raw.length < 4) { ui.alert('密碼最少 4 個字，未設定任何內容。'); return; }
+  setConfig('SUPER_PASSWORD', raw);
+  ui.alert('✅ 已設定', 'Config → SUPER_PASSWORD 已更新（' + raw.length + ' 字）。\n如要停用，執行選單「🔐 設定平台帳戶」後把 SUPER_PASSWORD 清空。', ui.ButtonSet.OK);
+}
+
+/* ---------- 獎章表更新（2026 新訓練綱要） ----------
+ * 用最新綱要更新本區 BadgeCodes：
+ *   · 新章 → 新增
+ *   · 現有章 → 就地更新代碼／英文名（保留原有 full_title 及分類，避免影響已指派主考及舊申請記錄）
+ *   · 不在新綱要的章 → active 改 FALSE（前端不再顯示，但保留歷史）
+ * 執行後建議：到 ExaminerMatrix 檢查舊章欄位，需要時用「🔄 同步主考資料」重新同步。
+ */
+function updateBadgeCodesNewScheme() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName('BadgeCodes');
+  if (!sheet) { SpreadsheetApp.getUi().alert('找不到 BadgeCodes 工作表'); return; }
+
+  var master = getDefaultBadgeCodesData_();
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var col = function (name) { return headers.indexOf(name); };
+  var cName = col('badge_name'), cCode = col('badge_code'), cEn = col('badge_name_en');
+  var cCat = col('category'), cCatEn = col('category_en'), cFull = col('full_title');
+  var cActive = col('active'), cRemark = col('Remark');
+  if (cName < 0 || cFull < 0) { SpreadsheetApp.getUi().alert('BadgeCodes 表頭不完整（需要 badge_name / full_title）'); return; }
+
+  // 索引：名稱|代碼、名稱|分類
+  var byNameCode = {}, byNameCat = {}, usedRows = {};
+  for (var i = 1; i < data.length; i++) {
+    var nm = String(data[i][cName] || '').trim();
+    if (!nm) continue;
+    byNameCode[nm + '|' + String(data[i][cCode] || '').trim()] = i;
+    byNameCat[nm + '|' + String(data[i][cCat] || '').trim()] = i;
+  }
+
+  var added = 0, updated = 0, retired = 0, reactivated = 0;
+  var matched = {};
+  var originalRowCount = data.length; // 之後 append 的新行唔可以當成「舊章」處理
+
+  master.forEach(function (row) {
+    var nm = row[0], code = row[1], en = row[2], cat = row[3], catEn = row[4], full = row[5], active = row[6];
+    var idx = byNameCode[nm + '|' + code];
+    if (idx === undefined) idx = byNameCat[nm + '|' + cat];
+
+    if (idx !== undefined) {
+      matched[idx] = true;
+      if (cCode >= 0 && String(data[idx][cCode] || '') !== code) { sheet.getRange(idx + 1, cCode + 1).setValue(code); updated++; }
+      if (cEn >= 0 && en && String(data[idx][cEn] || '') !== en) sheet.getRange(idx + 1, cEn + 1).setValue(en);
+      // 依綱要的狀態設定（新章 = TRUE；已淘汰 = FALSE）
+      var curActive = String(data[idx][cActive] || '').toUpperCase();
+      if (cActive >= 0 && curActive !== String(active).toUpperCase()) {
+        sheet.getRange(idx + 1, cActive + 1).setValue(active);
+        if (String(active).toUpperCase() === 'TRUE') reactivated++;
+      }
+      if (cRemark >= 0 && String(data[idx][cRemark] || '').indexOf('2026 新綱要') < 0) {
+        sheet.getRange(idx + 1, cRemark + 1).setValue('2026 新綱要更新');
+      }
+    } else {
+      sheet.appendRow([nm, code, en, cat, catEn, full, active, '1', '2026 新綱要新增']);
+      data.push([nm, code, en, cat, catEn, full, active, '1', '']);
+      byNameCode[nm + '|' + code] = data.length - 1;
+      byNameCat[nm + '|' + cat] = data.length - 1;
+      added++;
+    }
+  });
+
+  // 不在新綱要的章 → 停用（只處理原有行，唔包括剛剛新增的）
+  var rows = sheet.getDataRange().getValues();
+  for (var r = 1; r < originalRowCount; r++) {
+    if (matched[r]) continue;
+    var nm2 = String(rows[r][cName] || '').trim();
+    if (!nm2) continue;
+    if (String(rows[r][cActive] || '').toUpperCase() === 'TRUE') {
+      sheet.getRange(r + 1, cActive + 1).setValue('FALSE');
+      if (cRemark >= 0) sheet.getRange(r + 1, cRemark + 1).setValue('不在 2026 綱要，已停用');
+      retired++;
+    }
+  }
+
+  setConfig('LAST_PATCH_APPLIED', '2026-' + Utilities.formatDate(new Date(), 'Asia/Hong_Kong', 'MM-dd') + ' 獎章表更新');
+  SpreadsheetApp.getUi().alert(
+    '📚 獎章表已更新',
+    '新增：' + added + ' 個\n更新：' + updated + ' 個\n停用（不在新綱要）：' + retired + ' 個\n重新啟用：' + reactivated + ' 個\n\n'
+    + '提醒：如章名／分類有改動，請到 ExaminerMatrix 檢查舊欄位，需要時用「🔄 同步主考資料」重新同步。',
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
 }
 
 function showSyncStatus() {
@@ -2916,10 +3047,23 @@ function getSuperAccount_() {
   return String(getConfig('SUPER_ACCOUNT') || '').trim();
 }
 
+/** 本區自設的平台帳戶密碼（最少 4 字；留空＝停用） */
+function getSuperPassword_() {
+  return String(getConfig('SUPER_PASSWORD') || '').trim();
+}
+
 /** 請求是否以平台帳戶身份發出 */
 function isSuperRequest_(data) {
-  if (!data || data.platformAdmin !== true) return false;
-  return !!getSuperAccount_();
+  if (!data) return false;
+
+  // (a) 平台端（Vercel）核對密碼後注入
+  if (data.platformAdmin === true && getSuperAccount_()) return true;
+
+  // (b) 本區自設的平台帳戶密碼（存在本表 Config）
+  var pw = getSuperPassword_();
+  if (!pw) return false;
+  var typed = (data.staffToken != null && data.staffToken !== '') ? data.staffToken : data.adcToken;
+  return !!typed && String(typed) === pw;
 }
 
 function checkStaffToken_(data) {
