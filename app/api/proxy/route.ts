@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DISTRICTS } from '@/lib/district';
+import { isSuperRequest } from '@/lib/superAuth';
 
 /**
  * DBS 3.0 — API Proxy
@@ -12,7 +13,8 @@ import { DISTRICTS } from '@/lib/district';
  * 
  * GET: /api/proxy?districtCode=SKW&action=xxx&...
  * POST: /api/proxy (body: { districtCode, action, ... })
- * Debug: /api/proxy?districtCode=SKW&action=proxyDebug
+ * Debug: /api/proxy?districtCode=SKW&action=proxyDebug （只限超管 session，見下）
+ *        超管請改用 /api/super/overview 或 /super 平台總覽
  */
 
 export const runtime = 'nodejs';
@@ -35,16 +37,29 @@ export async function GET(request: NextRequest) {
   const envVarName = `DBS_${districtCode}_APIKEY`;
   const apiKey = process.env[envVarName] || '';
 
+  // 診斷端點：只限超管 session（避免公開外洩環境變數名稱、Key 前綴、Apps Script URL）
   if (action === 'proxyDebug') {
+    if (!isSuperRequest(request)) {
+      return NextResponse.json(
+        { success: false, error: '此診斷端點只限超管使用（請先到 /super 登入）' },
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
     return NextResponse.json({
       success: true, debug: true,
       districtCode, districtName: district.name,
       envVarName, apiKeyFound: !!apiKey,
-      apiKeyPrefix: apiKey ? apiKey.substring(0, 6) + '...' : '(empty)',
-      apiKeyLength: apiKey.length,
+      apiKeyPrefix: apiKey ? apiKey.substring(0, 4) + '…' : '(empty)',
       allEnvKeys: Object.keys(process.env).filter(k => k.startsWith('DBS_')),
-      apiBase: district.apiBase,
-    });
+      apiBaseMasked: (() => {
+        try {
+          const url = new URL(district.apiBase);
+          return `${url.origin}/macros/s/…/exec`;
+        } catch {
+          return '(invalid url)';
+        }
+      })(),
+    }, { headers: { 'Cache-Control': 'no-store' } });
   }
 
   if (!apiKey) {

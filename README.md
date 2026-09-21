@@ -128,6 +128,38 @@ ABC: {
 
 ---
 
+## 環境變數（Vercel）
+
+所有密鑰只存 Vercel 環境變數，不會進前端 JS、不會進 Google Sheet、不會入 Git。
+範本見 `.env.example`，詳細說明見 `SUPER_ADMIN.md`。
+
+| 名稱 | 需要 | 用途 |
+| --- | --- | --- |
+| `SUPER_KEY` | 必填 | 平台超管登入密碼（入口 `/super`） |
+| `SUPER_SESSION_SECRET` | 選填 | 超管 session cookie 簽名 secret |
+| `DBS_{區碼}_APIKEY` | 必填 | 各區 API Key，例如 `DBS_SKW_APIKEY` |
+| `DBS_{區碼}_STAFF_KEY` | 選填 | 該區 STAFF_TOKEN；令超管免密鑰操作該區秘書後台 |
+| `DBS_{區碼}_ADC_KEY` | 選填 | 該區 ADC_TOKEN；令超管免密鑰使用 ADC 審批 |
+
+---
+
+## 平台超管（/super）
+
+超管為最高權限帳戶，全域通行所有已接入地區：
+
+- 密碼只存 Vercel `SUPER_KEY`，於伺服器端（`/api/super/login`）以 timing-safe 方式比對
+- 登入後簽發 HttpOnly + SameSite=Lax 簽名 session cookie（8 小時），密碼不會留在前端
+- 平台總覽：各區連通狀態、health check、環境變數是否齊全（只顯示有無設定，不顯示金鑰）
+- 秘書後台（全域）：切換任何一區使用完整後台功能，區的金鑰由伺服器端注入
+- 未設定 `SUPER_KEY` 時一律拒絕登入（fail closed）
+
+```text
+/super   → 輸入 SUPER_KEY → 平台總覽 / 秘書後台（全域）
+/admin   → 區秘書用該區 STAFF_TOKEN 登入（現有流程不變）
+```
+
+---
+
 ## 重要注意
 
 - 前端版權固定保留 `© 2026 Scout System`

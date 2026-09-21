@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { detectSuperSession } from '@/lib/superClient';
 import { CertStandard } from '@/components/cert/CertStandard';
 import { CertReligious } from '@/components/cert/CertReligious';
 import { CertCommunity } from '@/components/cert/CertCommunity';
@@ -20,9 +21,24 @@ function PrintCertInner() {
   const [error, setError] = useState('');
   const [overlayMode, setOverlayMode] = useState(true);
   const [showBg, setShowBg] = useState(true);
+  const [superMode, setSuperMode] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  // 超管 session：列印頁唔需要（亦唔會）在 URL 帶 token
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const isSuper = await detectSuperSession();
+      if (!alive) return;
+      setSuperMode(isSuper);
+      setSessionChecked(true);
+    })();
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
-    if (!token) {
+    if (!sessionChecked) return;
+    if (!token && !superMode) {
       setError('請從後台進入（缺少 token）');
       setLoading(false);
       return;
@@ -40,10 +56,10 @@ function PrintCertInner() {
       })
       .catch(() => setError('網路錯誤'))
       .finally(() => setLoading(false));
-  }, [certId, token]);
+  }, [certId, token, superMode, sessionChecked]);
 
   const handlePrint = async () => {
-    if (!cert || !token) return;
+    if (!cert || (!token && !superMode)) return;
     try {
       await api.recordPrintAction(token, certId, {
         memberName: cert.memberName,
@@ -88,6 +104,7 @@ function PrintCertInner() {
       }}>
         <strong>🖨️ 證書列印</strong>
         <span style={{ fontSize: 13 }}>{cert.memberName} · {cert.badgeName} · {cert.certificateNumber || '待生成'}</span>
+        {superMode && <span style={{ fontSize: 12, background: '#2e7d32', padding: '2px 8px', borderRadius: 4 }}>超管模式</span>}
         <div style={{ flex: 1 }} />
         <label style={{ fontSize: 13, cursor: 'pointer' }}>
           <input type="checkbox" checked={showBg} onChange={e => setShowBg(e.target.checked)} /> 螢幕顯示底圖
