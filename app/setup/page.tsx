@@ -158,6 +158,15 @@ export default function SetupPage() {
         </div>
       </section>
 
+      {/* ── 資料保護 ── */}
+      <section style={{ background: '#e8f5e9', padding: '22px 28px', borderRadius: '16px', border: '1px solid #c8e6c9' }}>
+        <h3 style={{ margin: '0 0 8px', color: '#1b5e20', fontSize: '16px' }}>🔒 更新不會刪資料</h3>
+        <p style={{ margin: 0, color: '#2e5d34', fontSize: '14px', lineHeight: 1.9 }}>
+          日後貼上新版模板或按選單更新，<strong>只會新增及修改，永不刪除</strong>考生、主考、證書或 Config 資料。
+          舊獎章只會標記為停用並保留記錄；系統執行前會自動備份，可從選單「🗂️ 查看備份／還原」還原。
+        </p>
+      </section>
+
       {/* ── 資料放哪 ── */}
       <section style={{ background: 'white', padding: '22px 28px', borderRadius: '16px' }}>
         <h3 style={{ margin: '0 0 8px', color: '#003366', fontSize: '16px' }}>你的資料放哪？</h3>

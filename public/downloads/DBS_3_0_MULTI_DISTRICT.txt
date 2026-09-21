@@ -147,7 +147,17 @@ function initializeSheets(ss) {
   });
 
   var defaultSheet = ss.getSheetByName('Sheet1');
-  if (defaultSheet && ss.getSheets().length > 1) ss.deleteSheet(defaultSheet);
+  if (defaultSheet && ss.getSheets().length > 1) {
+    // ★ 只有完全空白才會刪除；有內容一律保留（改為隱藏），避免影響使用中的區
+    var dv = defaultSheet.getDataRange().getValues();
+    var dEmpty = true;
+    for (var dr = 0; dr < dv.length && dEmpty; dr++) {
+      for (var dc2 = 0; dc2 < dv[dr].length; dc2++) {
+        if (dv[dr][dc2] !== '' && dv[dr][dc2] !== null) { dEmpty = false; break; }
+      }
+    }
+    if (dEmpty) ss.deleteSheet(defaultSheet); else defaultSheet.hideSheet();
+  }
 
   buildExaminerMatrixHeader_(ss);
   setSheetColorsAndVisibility_(ss);
@@ -340,6 +350,9 @@ function getReadmeSheetData_() {
     ['ExaminerMatrix 怎樣填', 'A 欄=主考姓名，B 欄=單位（例如：第1旅），C 欄起每個章填 D 或 G。D=區主考，G=旅團主考。已有主考名單可直接批量填這張表，不用重新申請。'],
     ['Examiner 三表關係', 'ExaminerMatrix = 人工維護主表；Examiners = 前端實際讀取名單；ExaminerAppointments = 新主考自行申請 / ADC 審批流程表。初始化現有名單請改 ExaminerMatrix，不是 ExaminerAppointments。'],
     ['新章正確流程', '新章 = 貼平台提供的更新檔 GS + Run 1 次；如再改主考資格 = 改 ExaminerMatrix + 同步主考資料。'],
+    ['🔒 更新／升級會否刪資料？', '不會。所有更新及升級只會「新增」或「修改」指定欄位，永不刪除任何行或工作表。系統執行前會自動備份受影響的工作表（隱藏、以「備份_」開頭）。'],
+    ['備份怎樣還原？', '選單「🗂️ 查看備份／還原」→ 輸入編號即可還原；還原前會先備份現況，所以一定可以再還原返轉頭。每張表最多保留最近 5 份備份。'],
+    ['舊獎章會否消失？', '不會。已取消的舊章只會標記 active=FALSE，行及記錄全部保留，舊證書不受影響；主考表若有舊章 D/G 資料，重建表頭時會自動保留在最右邊（淺灰底）。'],
     ['進階工作表', 'BadgeCodes、Applications、CertificateQueue、CertificatePrintList、AuditLog、ExaminerAppointments、Examiners 預設隱藏，因為一般不用手改；如要查看，可用選單顯示。'],
     ['如何拿 URL', 'Apps Script 內按 Deploy → New deployment → 類型選 Web App → Who has access 選 Anyone → Deploy → 複製 /exec URL'],
     ['如何通知平台接入', '把 /exec URL 和 API Key 一起提交到前端「申請接入」頁面。API Key 在 setup 彈窗只顯示一次，忘記了請用選單 → 重新生成 API Key。'],
@@ -380,7 +393,12 @@ function buildExaminerMatrixHeader_(ss) {
   var header = ['姓名', '單位'].concat(titles);
   var values = sh.getDataRange().getValues();
   var hasRealHeader = values.length > 0 && values[0] && values[0][2];
-  if (!hasRealHeader) {
+  // ★ 已有主考名字的行 = 有資料，絕不覆蓋（只有完全空白才會寫入表頭）
+  var hasDataRows = false;
+  for (var mr = 1; mr < values.length; mr++) {
+    if (values[mr] && values[mr][0] && String(values[mr][0]).trim()) { hasDataRows = true; break; }
+  }
+  if (!hasRealHeader && !hasDataRows) {
     sh.clear();
     sh.getRange(1, 1, 1, header.length).setValues([header]);
     sh.setFrozenRows(1);
@@ -1566,6 +1584,7 @@ function sortCertificatePrintListByDate() {
     return (a[16] || '').localeCompare(b[16] || '');
   });
   var newData = [headers].concat(rows);
+  backupSheet_('CertificatePrintList', 'beforeSort');
   sheet.clear();
   sheet.getRange(1, 1, newData.length, newData[0].length).setValues(newData);
   for (var i = 1; i < newData.length; i++) { sheet.getRange(i + 1, 1).setValue(i); }
@@ -2186,6 +2205,52 @@ function regenerateApiKeyMenu() {
   SpreadsheetApp.getUi().alert('錯誤', '找不到 API_KEY_HASH 設定行。');
 }
 
+/* ---------- 資料保護：重寫任何工作表前先自動備份（只加不刪） ---------- */
+function backupSheet_(sheetName, tag) {
+  try {
+    var ss = getSpreadsheet();
+    var sh = ss.getSheetByName(sheetName);
+    if (!sh) return '';
+    var values = sh.getDataRange().getValues();
+    var hasSomething = false;
+    for (var r = 0; r < values.length && !hasSomething; r++) {
+      for (var c = 0; c < values[r].length; c++) {
+        if (values[r][c] !== '' && values[r][c] !== null) { hasSomething = true; break; }
+      }
+    }
+    if (!hasSomething) return '';
+    var stamp = Utilities.formatDate(new Date(), 'Asia/Hong_Kong', 'yyyyMMdd-HHmmss');
+    var name = '備份_' + sheetName + '_' + stamp + (tag ? '_' + tag : '');
+    var bk = ss.insertSheet(name);
+    bk.getRange(1, 1, values.length, Math.max(1, values[0].length)).setValues(
+      values.map(function (row) {
+        var out = row.slice(0, Math.max(1, values[0].length));
+        while (out.length < Math.max(1, values[0].length)) out.push('');
+        return out;
+      })
+    );
+    bk.hideSheet();
+    cleanupOldBackups_(sheetName, 5);
+    return name;
+  } catch (e) {
+    return '';
+  }
+}
+
+/* 只保留最近 N 份同表備份（刪的是系統自己產生的備份，不會碰任何原始資料） */
+function cleanupOldBackups_(sheetName, keep) {
+  try {
+    var ss = getSpreadsheet();
+    var prefix = '備份_' + sheetName + '_';
+    var names = ss.getSheets().map(function (x) { return x.getName(); })
+      .filter(function (n) { return n.indexOf(prefix) === 0; }).sort();
+    while (names.length > keep) {
+      var victim = ss.getSheetByName(names.shift());
+      if (victim) ss.deleteSheet(victim);
+    }
+  } catch (e) {}
+}
+
 function setupSystem() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss) throw new Error('請先在 Google Sheet 中綁定 Apps Script，再執行 setupSystem()');
@@ -2496,7 +2561,8 @@ function syncExaminerMatrixDirect(ss) {
   }
   if (examiners.length === 0) return { success: false, error: 'Matrix 沒有有效主考' };
 
-  // 重寫 Examiners
+  // 重寫 Examiners（★ 先自動備份，出錯可以還原）
+  if (exSheet) backupSheet_('Examiners', 'beforeSync');
   if (!exSheet) exSheet = ss.insertSheet('Examiners');
   exSheet.clear();
   exSheet.appendRow(['examiner_id','name','unit','email','phone','district_badges','group_badges','term_start','term_end','status','current_load','max_load','updated_at']);
@@ -2543,9 +2609,55 @@ function onOpen() {
     .addItem('👀 顯示進階工作表', 'showAdvancedSheets')
     .addItem('🙈 隱藏進階工作表', 'hideAdvancedSheets')
     .addItem('📊 查看同步狀態', 'showSyncStatus')
+    .addSeparator()
+    .addItem('🗂️ 查看備份／還原', 'showBackupsMenu')
     .addToUi();
 }
 
+
+/* ---------- 備份檢視 / 還原（只加不刪：還原前會先備份現況） ---------- */
+function listBackups_() {
+  var ss = getSpreadsheet();
+  return ss.getSheets().map(function (x) { return x.getName(); })
+    .filter(function (n) { return n.indexOf('備份_') === 0; }).sort();
+}
+
+function showBackupsMenu() {
+  var ui = SpreadsheetApp.getUi();
+  var names = listBackups_();
+  if (names.length === 0) {
+    ui.alert('🗂️ 資料備份', '目前沒有任何備份。\n\n系統會在以下動作前自動備份：\n・更新獎章表\n・同步主考資料\n・重建 Matrix 表頭\n・排序／重編證書列印清單\n\n每張表最多保留最近 5 份備份。', ui.ButtonSet.OK);
+    return;
+  }
+  var lines = names.map(function (n, i) { return (i + 1) + '. ' + n; }).join('\n');
+  var res = ui.prompt(
+    '🗂️ 資料備份（共 ' + names.length + ' 份）',
+    '輸入編號即可還原該備份（直接按取消即可離開）。\n\n' + lines + '\n\n※ 還原前會先自動備份現況，所以任何情況都不會失去資料。',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (res.getSelectedButton() !== ui.Button.OK) return;
+  var pick = parseInt(String(res.getResponseText() || '').trim(), 10);
+  if (!pick || pick < 1 || pick > names.length) { ui.alert('編號不正確，已取消。'); return; }
+  var bkName = names[pick - 1];
+  var target = bkName.replace(/^備份_/, '').replace(/_(\d{8}-\d{6}).*$/, '');
+  var meta = bkName.replace(/^備份_/, '').replace('_' + (bkName.match(/(\d{8}-\d{6})/) || [])[1], '');
+  var parts = (meta || '').split('_').filter(function (x) { return x; });
+  var tag = parts.length > 1 ? parts[1] : '';
+  ui.alert('還原確認', '會把「' + target + '」還原成備份版本：\n' + bkName + '\n\n現況會先自動備份，可再還原返轉頭。', ui.ButtonSet.OK);
+  restoreSheetFromBackup_(target, bkName);
+}
+
+function restoreSheetFromBackup_(targetName, bkName) {
+  var ss = getSpreadsheet();
+  var bk = ss.getSheetByName(bkName);
+  var target = ss.getSheetByName(targetName);
+  if (!bk || !target) { SpreadsheetApp.getUi().alert('找不到備份或目標工作表，未作任何改動。'); return; }
+  var values = bk.getDataRange().getValues();
+  backupSheet_(targetName, 'beforeRestore');
+  target.clear();
+  target.getRange(1, 1, values.length, Math.max(1, values[0].length)).setValues(values);
+  SpreadsheetApp.getUi().alert('✅ 已還原', targetName + ' 已還原成：\n' + bkName + '\n\n（還原前的內容已自動備份，可再次還原。）', SpreadsheetApp.getUi().ButtonSet.OK);
+}
 
 /* ---------- 平台帳戶（後備通道）選單 ---------- */
 function ensureSuperAccountRow_() {
@@ -2598,6 +2710,8 @@ function updateBadgeCodesNewScheme() {
   var sheet = ss.getSheetByName('BadgeCodes');
   if (!sheet) { SpreadsheetApp.getUi().alert('找不到 BadgeCodes 工作表'); return; }
 
+  backupSheet_('BadgeCodes', 'before2026update');
+
   var master = getDefaultBadgeCodesData_();
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
@@ -2616,7 +2730,7 @@ function updateBadgeCodesNewScheme() {
     byNameCat[nm + '|' + String(data[i][cCat] || '').trim()] = i;
   }
 
-  var added = 0, updated = 0, retired = 0, reactivated = 0;
+  var added = 0, updated = 0, retired = 0, reactivated = 0, keptOff = 0;
   var matched = {};
   var originalRowCount = data.length; // 之後 append 的新行唔可以當成「舊章」處理
 
@@ -2631,9 +2745,16 @@ function updateBadgeCodesNewScheme() {
       if (cEn >= 0 && en && String(data[idx][cEn] || '') !== en) sheet.getRange(idx + 1, cEn + 1).setValue(en);
       // 依綱要的狀態設定（新章 = TRUE；已淘汰 = FALSE）
       var curActive = String(data[idx][cActive] || '').toUpperCase();
-      if (cActive >= 0 && curActive !== String(active).toUpperCase()) {
-        sheet.getRange(idx + 1, cActive + 1).setValue(active);
-        if (String(active).toUpperCase() === 'TRUE') reactivated++;
+      var curRemark = cRemark >= 0 ? String(data[idx][cRemark] || '') : '';
+      var wantActive = String(active).toUpperCase();
+      if (cActive >= 0 && curActive !== wantActive) {
+        if (wantActive === 'TRUE' && curActive === 'FALSE' && curRemark.indexOf('綱要') < 0) {
+          // ★ 這行是區方自己停用的（不是系統停用）→ 尊重原設定，不強行重開
+          keptOff++;
+        } else {
+          sheet.getRange(idx + 1, cActive + 1).setValue(active);
+          if (wantActive === 'TRUE') reactivated++;
+        }
       }
       if (cRemark >= 0 && String(data[idx][cRemark] || '').indexOf('2026 新綱要') < 0) {
         sheet.getRange(idx + 1, cRemark + 1).setValue('2026 新綱要更新');
@@ -2663,8 +2784,11 @@ function updateBadgeCodesNewScheme() {
   setConfig('LAST_PATCH_APPLIED', '2026-' + Utilities.formatDate(new Date(), 'Asia/Hong_Kong', 'MM-dd') + ' 獎章表更新');
   SpreadsheetApp.getUi().alert(
     '📚 獎章表已更新',
-    '新增：' + added + ' 個\n更新：' + updated + ' 個\n停用（不在新綱要）：' + retired + ' 個\n重新啟用：' + reactivated + ' 個\n\n'
-    + '提醒：如章名／分類有改動，請到 ExaminerMatrix 檢查舊欄位，需要時用「🔄 同步主考資料」重新同步。',
+    '新增：' + added + ' 個\n更新：' + updated + ' 個\n停用（不在新綱要）：' + retired + ' 個\n重新啟用：' + reactivated + ' 個\n'
+    + (keptOff > 0 ? '（另有 ' + keptOff + ' 個是你們自己停用的，已保持原狀不重開）\n' : '')
+    + '\n✅ 只會新增及修改，不會刪除任何行；執行前已自動備份 BadgeCodes。\n'
+    + '\n想為主考表加入 2026 新章欄位（可填 D/G）：選單「🔧 重建 Matrix 表頭（依 BadgeCodes）」，舊欄及所有 D/G 會自動保留。\n'
+    + '如主考資格有改動：改完 ExaminerMatrix 後按「🔄 同步主考資料」。',
     SpreadsheetApp.getUi().ButtonSet.OK
   );
 }
@@ -2844,6 +2968,7 @@ function sortAndRenumberCertificates(ss) {
   }
   
   var newData = [headers].concat(rows);
+  backupSheet_('CertificatePrintList', 'beforeRenumber');
   printSheet.clear();
   printSheet.getRange(1, 1, newData.length, newData[0].length).setValues(newData);
 }
@@ -3154,14 +3279,40 @@ function rebuildMatrixHeaderFromBadgeCodes() {
   if (!sh) { sh = ss.insertSheet('ExaminerMatrix'); }
   var old = sh.getDataRange().getValues();
   var oldHeader = old.length > 0 ? old[0] : [];
-  var oldTitleToCol = {};
+  var oldTitleCols = {};   // 欄名 → 欄位索引陣列（同一欄名可能出現多過一次）
   for (var c = 2; c < oldHeader.length; c++) {
     var t = oldHeader[c] ? String(oldHeader[c]).trim().replace(/\n/g, '') : '';
-    if (t) oldTitleToCol[t] = c;
+    if (!t) continue;
+    if (!oldTitleCols[t]) oldTitleCols[t] = [];
+    oldTitleCols[t].push(c);
   }
 
-  // 3) 重建：把舊主考列資料按新表頭順序重排
+  // ★ 保險：有主考資料但完全沒有表頭欄名 → 對不上位，取消重建（不動任何資料）
+  var hasDataRows = false;
+  for (var rr = 1; rr < old.length; rr++) {
+    if (old[rr][0] && String(old[rr][0]).trim()) { hasDataRows = true; break; }
+  }
+  if (hasDataRows && Object.keys(oldTitleCols).length === 0) {
+    try { SpreadsheetApp.getUi().alert('已取消重建', '⚠️ ExaminerMatrix 有主考資料，但沒有表頭欄名，強行重建會令 D/G 對不上位。\n\n資料未有任何改動。請先補回表頭列，或聯絡平台管理員。', SpreadsheetApp.getUi().ButtonSet.OK); } catch (e) {}
+    return { success: false, error: 'matrix has rows but no header' };
+  }
+
+  // ★ 新綱要已沒有的舊章欄（有 D/G 資料的）→ 保留在最尾，不會消失
+  var legacy = [];
+  for (var lc = 2; lc < oldHeader.length; lc++) {
+    var lt = oldHeader[lc] ? String(oldHeader[lc]).trim().replace(/\n/g, '') : '';
+    if (!lt || titles.indexOf(lt) >= 0) continue;
+    var cols2 = [];
+    for (var lr = 1; lr < old.length; lr++) {
+      var lv = old[lr][lc] ? String(old[lr][lc]).trim().toUpperCase() : '';
+      if (lv === 'D' || lv === 'G') { cols2.push(lc); break; }
+    }
+    if (cols2.length > 0) legacy.push({ title: lt, cols: cols2 });
+  }
+
+  // 3) 重建：把舊主考列資料按新表頭順序重排（同名欄取第一個有值的）
   var newHeader = ['姓名', '單位'].concat(titles);
+  legacy.forEach(function (lg) { newHeader.push(lg.title); });
   var newRows = [newHeader];
   for (var r = 1; r < old.length; r++) {
     var name = old[r][0] ? String(old[r][0]).trim() : '';
@@ -3169,23 +3320,41 @@ function rebuildMatrixHeaderFromBadgeCodes() {
     var unit = old[r][1] ? String(old[r][1]).trim() : '';
     var row = [name, unit];
     for (var k = 0; k < titles.length; k++) {
-      var oc = oldTitleToCol[titles[k]];
-      var val = (oc !== undefined && old[r][oc]) ? String(old[r][oc]).trim().toUpperCase() : '';
-      row.push(val === 'D' ? 'D' : (val === 'G' ? 'G' : ''));
+      var cols = oldTitleCols[titles[k]] || [];
+      var val = '';
+      for (var ci = 0; ci < cols.length; ci++) {
+        var cv = old[r][cols[ci]] ? String(old[r][cols[ci]]).trim().toUpperCase() : '';
+        if (cv === 'D' || cv === 'G') { val = cv; break; }
+      }
+      row.push(val);
+    }
+    for (var lg = 0; lg < legacy.length; lg++) {
+      var lv2 = '';
+      for (var lj = 0; lj < legacy[lg].cols.length; lj++) {
+        var lvv = old[r][legacy[lg].cols[lj]] ? String(old[r][legacy[lg].cols[lj]]).trim().toUpperCase() : '';
+        if (lvv === 'D' || lvv === 'G') { lv2 = lvv; break; }
+      }
+      row.push(lv2);
     }
     newRows.push(row);
   }
 
-  // 4) 寫回（清空後整批寫）
+  // 4) 寫回（★ 先自動備份，再清空後整批寫）
+  backupSheet_('ExaminerMatrix', 'beforeRebuild');
   sh.clear();
   sh.getRange(1, 1, newRows.length, newHeader.length).setValues(newRows);
   sh.setFrozenRows(1);
   sh.setFrozenColumns(2);
+  if (legacy.length > 0) {
+    sh.getRange(1, 3 + titles.length, 1, legacy.length).setBackground('#eeeeee');
+  }
 
   var msg = '✅ Matrix 表頭已依 BadgeCodes 重建。\n\n' +
-    '專章欄數：' + titles.length + '\n' +
-    '保留主考列：' + (newRows.length - 1) + '\n\n' +
-    '現有主考的 D/G 已依 full_title 重新對位保留。';
+    '2026 綱要專章欄：' + titles.length + '\n' +
+    '保留主考列：' + (newRows.length - 1) + '\n' +
+    '保留舊綱要欄（有 D/G 資料）：' + legacy.length + '\n\n' +
+    '✅ 所有主考及 D/G 資料一個都無刪，寫入前已自動備份 ExaminerMatrix。\n' +
+    (legacy.length > 0 ? '舊綱要欄已放在最右邊並以淺灰底標示；如不需要，可自行隱藏或刪除該欄。' : '現有主考的 D/G 已依 full_title 重新對位保留。');
   try { SpreadsheetApp.getUi().alert('重建完成', msg, SpreadsheetApp.getUi().ButtonSet.OK); } catch (e) {}
   return { success: true, badgeCount: titles.length, examinerCount: newRows.length - 1 };
 }

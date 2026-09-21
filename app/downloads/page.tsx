@@ -86,6 +86,10 @@ export default function DownloadsPage() {
           然後在 Google Sheet 選單執行 <strong>🏕️ DBS 管理 → 📚 更新獎章表（2026 新綱要）</strong>。
           此函數會加入新章、停用已取消的章，並保留已發出的證書記錄，可安心重複執行。
         </p>
+        <p style={{ ...pStyle, background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: '10px', padding: '12px 14px' }}>
+          🔒 <strong>不會刪除任何資料：</strong>更新只會新增及修改，考生、主考、證書、Config 全部保留；
+          執行前系統會自動備份受影響的工作表，日後可從選單「🗂️ 查看備份／還原」還原。
+        </p>
         <div style={{ border: '1px dashed #cbd5e1', borderRadius: '14px', padding: '18px', background: '#f8fafc' }}>
           <div style={{ fontWeight: 700, color: '#334155', fontSize: '15px' }}>尚未發佈其他公開 Patch</div>
           <div style={{ color: '#64748b', fontSize: '13px', marginTop: '6px' }}>
