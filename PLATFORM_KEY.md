@@ -11,7 +11,7 @@
 
 > **在該區的登入欄，直接打你設在 Vercel 的 `SUPER_KEY` 就得。**
 
-不用打帳號、不用打 `sheep:`、不用任何前綴。
+不用打帳號、不用任何前綴。
 
 ---
 
@@ -79,13 +79,53 @@ SUPER_ACCOUNT = sheep
 | 外觀 | 前端零入口、零提示、零字眼，同未加之前一模一樣 |
 | 緊急停用 | 改 `SUPER_KEY`（全平台即時失效）；或清空某區 `SUPER_ACCOUNT`（該區失效） |
 
-> ⚠️ 請開啟 Vercel 帳戶的兩步驗證（2FA）並限制成員權限：有 Vercel 專案權限的人可以看到 `SUPER_KEY`。
->
-> ⚠️ 平台密碼等同整個平台的鑰匙，請用長密碼、唔好同其他服務共用、唔好寫在 Google Sheet 或聊天記錄內。
+> ⚠️ 平台密碼等同整個平台的鑰匙：請用長密碼、唔好同其他服務共用、唔好寫在 Google Sheet 或聊天記錄內。
 
 ---
 
-## 四、其他
+## 四、保護 Vercel 帳戶（非常重要）
+
+登入到 Vercel 帳戶 ＝ 睇得到 `SUPER_KEY` 及所有區的 API Key。
+所以**「Vercel 帳戶安全」就等於「整個平台安全」**。
+
+### 1. 開啟 2FA（雙重驗證）
+
+2FA ＝ 登入時除密碼外，要多一重證明（驗證器 App 的 6 位數字，或指紋／Face ID 的 passkey）。
+就算有人偷到你的 Email／密碼，都入唔到 Vercel。
+
+```text
+vercel.com → 右上角頭像 → Account Settings → Authentication
+→ Two-Factor Authentication → Enable
+```
+
+官方直接連結：`https://vercel.com/account/settings/authentication`
+
+- **Passkey**（推薦，最防釣魚）：按 Passkey → 用指紋／Face ID 登記
+- **驗證器 App**：掃 QR Code → 輸入 App 顯示的 6 位數字
+  （1Password / Google Authenticator / Microsoft Authenticator / Authy 均可）
+
+⚠️ 開完務必抄低／下載 **備用碼（Recovery Codes）** 收好：換手機或洗機時靠它入返。
+
+### 2. 把 `SUPER_KEY` 標為 Sensitive
+
+Settings → Environment Variables → 編輯 `SUPER_KEY` → 勾選 **Sensitive**。
+標記之後，在 Vercel 介面亦**睇唔返**該值（只可覆寫），減少被偷睇螢幕或截圖外洩的風險。
+
+### 3. 定期檢查
+
+- Account Settings → Tokens：刪走唔用／唔認識的 Access Token
+- Team Settings → Members：只保留需要的人
+- Team Settings → Security & Privacy：可開啟 **Two-Factor Authentication Enforcement**，強制所有成員開啟 2FA
+
+### 4. 唔想開 2FA 的話（最低限度）
+
+- `SUPER_KEY` 用 **20 字以上**隨機密碼（用密碼管理器產生），唔同其他服務共用
+- 唔好把 `SUPER_KEY` 寫在 Google Sheet、聊天記錄、電郵或截圖
+- 唔好把 Vercel 專案權限分享給唔需要的人
+
+---
+
+## 五、其他
 
 - 平台帳戶只等於「該區最高權限」，仍會走 Apps Script 本身的業務邏輯（批核流程、主考指派模式等），亦只會操作你登入那一個區的資料。
 - 登入欄打錯（唔係平台密碼）時，會照舊當作該區 staff/ADC 密鑰處理，所以區秘書嘅日常操作完全不受影響。
