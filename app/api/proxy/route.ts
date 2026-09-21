@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DISTRICTS } from '@/lib/district';
-import { isSuperRequest } from '@/lib/superAuth';
 
 /**
  * DBS 3.0 — API Proxy
@@ -13,12 +12,24 @@ import { isSuperRequest } from '@/lib/superAuth';
  * 
  * GET: /api/proxy?districtCode=SKW&action=xxx&...
  * POST: /api/proxy (body: { districtCode, action, ... })
- * Debug: /api/proxy?districtCode=SKW&action=proxyDebug （只限超管 session，見下）
- *        超管請改用 /api/super/overview 或 /super 平台總覽
+ *
+ * 診斷：GET /api/proxy?districtCode=SKW&action=proxyDebug
+ *       需要 request header「x-dbs-super-key: <SUPER_KEY>」，否則一律 401。
+ *       （原本無需驗證，會公開外洩環境變數名稱及 Key 前綴，已收緊。）
  */
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+/** 平台密鑰（與選單「🔐 設定平台萬用密鑰」用的同一組；只讀伺服器端環境變數） */
+function readPlatformKey(): string {
+  const names = ['SUPER_KEY', 'DBS_SUPER_KEY', 'super_key'];
+  for (const name of names) {
+    const value = process.env[name];
+    if (value && String(value).trim()) return String(value).trim();
+  }
+  return '';
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -37,11 +48,13 @@ export async function GET(request: NextRequest) {
   const envVarName = `DBS_${districtCode}_APIKEY`;
   const apiKey = process.env[envVarName] || '';
 
-  // 診斷端點：只限超管 session（避免公開外洩環境變數名稱、Key 前綴、Apps Script URL）
+  // 診斷端點：只限知道平台密鑰的人（header 傳入，不會留在 URL／瀏覽器記錄）
   if (action === 'proxyDebug') {
-    if (!isSuperRequest(request)) {
+    const platformKey = readPlatformKey();
+    const provided = request.headers.get('x-dbs-super-key') || '';
+    if (!platformKey || provided !== platformKey) {
       return NextResponse.json(
-        { success: false, error: '此診斷端點只限超管使用（請先到 /super 登入）' },
+        { success: false, error: 'Not available' },
         { status: 401, headers: { 'Cache-Control': 'no-store' } }
       );
     }

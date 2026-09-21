@@ -20,7 +20,7 @@ import {
 } from '@/lib/district';
 import { useDistrict } from '@/lib/useDistrict';
 
-const PUBLIC_PATHS = ['/', '/setup', '/onboard', '/districts', '/guide', '/downloads', '/updates', '/super'];
+const PUBLIC_PATHS = ['/', '/setup', '/onboard', '/districts', '/guide', '/downloads', '/updates'];
 
 const navItems = [
   { href: '/apply', label: '📝 報考' },
@@ -154,11 +154,6 @@ export default function DistrictShell({ children }: { children: React.ReactNode 
         <div>{PLATFORM_COPYRIGHT}</div>
         <div style={{ marginTop: '6px' }}>
           {district ? `${district.name} · Multi-district platform powered by Scout System` : 'Multi-district platform powered by Scout System'}
-        </div>
-        <div style={{ marginTop: '10px' }}>
-          <Link href="/super" style={{ color: '#90a4ae', textDecoration: 'none', fontSize: '12px' }}>
-            🔐 平台超管
-          </Link>
         </div>
       </footer>
     </>

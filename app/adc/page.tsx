@@ -8,9 +8,8 @@
  *  放到 repo：  app/adc/page.tsx
  * ========================================================================== */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { api } from '@/lib/api';
-import { detectSuperSession } from '@/lib/superClient';
 
 interface ReqBadge { code?: string; fullTitle: string; scope: 'D' | 'G'; }
 interface AdcApplication {
@@ -167,25 +166,6 @@ function AdminPanel() {
     return false;
   };
 
-  const [superMode, setSuperMode] = useState(false);
-
-  // 超管 session：免輸入 ADC 密鑰直接進入（ADC key 由伺服器端從 Vercel 環境變數注入）
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      const isSuper = await detectSuperSession();
-      if (!alive || !isSuper) return;
-      setSuperMode(true);
-      try {
-        if (await loadAll('')) { if (alive) setAuthed(true); }
-      } catch {
-        /* 該區未設定 DBS_區碼_ADC_KEY 時，維持手動輸入密鑰 */
-      }
-    })();
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const login = async () => {
     setError(''); setLoading(true);
     try { if (await loadAll(token)) setAuthed(true); }
@@ -259,11 +239,6 @@ function AdminPanel() {
   // 審批清單
   return (
     <div>
-      {superMode && (
-        <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', color: '#1b5e20', padding: '10px 12px', borderRadius: '8px', marginBottom: '12px', fontSize: '13px' }}>
-          🌐 超管全域模式：ADC 權限由 Vercel 環境變數（DBS_區碼_ADC_KEY）於伺服器端注入。
-        </div>
-      )}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <h3 style={{ color: '#003366', margin: 0 }}>待審批主考申請（{apps.length}）</h3>
         <button onClick={reload} disabled={loading} style={{
@@ -368,25 +343,6 @@ function HelpPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [doc, setDoc] = useState<'adc' | 'maintain' | 'script'>('adc');
-
-  const [superMode, setSuperMode] = useState(false);
-
-  // 超管 session：免輸入 ADC 密鑰即可查看說明文件
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      const isSuper = await detectSuperSession();
-      if (!alive || !isSuper) return;
-      try {
-        const res = await api.adcVerify('');
-        if (alive && res.success) { setSuperMode(true); setAuthed(true); }
-      } catch {
-        /* 維持手動輸入 */
-      }
-    })();
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const login = async () => {
     setError(''); setLoading(true);

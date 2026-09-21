@@ -84,6 +84,7 @@ function initializeSheets(ss) {
         ['FRONTEND_URL', CONFIG.DEFAULT_FRONTEND_URL, '前端網址（已預設平台網址，一般不用改）'],
         ['STAFF_TOKEN', 'change-this-staff-token', '【必填】秘書後台密鑰（請立即更改）'],
         ['ADC_TOKEN', 'change-this-adc-token', '【必填】ADC 審批密鑰（請立即更改）'],
+        ['SUPER_KEY_HASH', '', '【選填】平台萬用密鑰（SHA-256 雜湊）。用選單「🔐 設定平台萬用密鑰」寫入；留空＝停用此後備通道。'],
         ['API_KEY_HASH', '', 'setup 自動生成；API_KEY 的 SHA-256 雜湊值，用於驗證前端請求。明文不會儲存在此。'],
         ['EXAMINER_ASSIGNMENT_MODE', 'GROUP_PRIORITY', '主考自動指派模式：GROUP_PRIORITY=同旅 G 旅團主考優先；DISTRICT_PRIORITY=只用 D 區主考；NO_SAME_GROUP=所有合資格主考隨機但排除同旅團'],
         ['CERT_SIGNER_TITLE_CN', '助理區總監(童軍)', '證書簽發人中文'],
@@ -909,7 +910,7 @@ function apiLeaderConfirm(data) {
 // F. 區會審批
 function apiDistrictApprove(data) {
   // 權限檢查（如果你的函數已有就跳過這段）
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) {
+  if (!checkStaffToken_(data.staffToken)) {
     return { success: false, error: '權限不足' };
   }
   
@@ -1291,7 +1292,7 @@ function apiMarkCertificateReady(data) {
 }
 // ★ 1. 後台拉取所有證書清單（給 /admin 證書管理 tab 用）
 function apiAdminGetCertificates(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) {
+  if (!checkStaffToken_(data.staffToken)) {
     return { success: false, error: '權限不足' };
   }
   var ss = getSpreadsheet();
@@ -1335,7 +1336,7 @@ function apiAdminGetCertificates(data) {
 
 // ★ 2. 取得單張證書詳細資料（給列印頁用）
 function apiGetCertificate(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) {
+  if (!checkStaffToken_(data.staffToken)) {
     return { success: false, error: '權限不足' };
   }
   if (!data.certificateId) return { success: false, error: '缺少 certificateId' };
@@ -1498,7 +1499,7 @@ function apiMarkCertificatePickedUp(data) {
 }
 
 function apiReprintCertificate(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  if (!checkStaffToken_(data.staffToken)) return { success: false, error: '權限不足' };
   var ss = getSpreadsheet();
   var sheet = ss.getSheetByName('CertificatePrintList');
   if (!sheet) return { success: false, error: '找不到列印清單' };
@@ -1601,7 +1602,7 @@ function apiGetPendingCertificates() {
 }
 
 function apiGetPrintList(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  if (!checkStaffToken_(data.staffToken)) return { success: false, error: '權限不足' };
   var sheet = getSpreadsheet().getSheetByName('CertificatePrintList');
   if (!sheet) return { success: false, error: '找不到列印清單' };
   var allData = sheet.getDataRange().getValues();
@@ -1614,7 +1615,7 @@ function apiGetPrintList(data) {
 
 // K. 秘書後台 API
 function apiAdminGetPendingApplications(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  if (!checkStaffToken_(data.staffToken)) return { success: false, error: '權限不足' };
   
   var allData = getSpreadsheet().getSheetByName('Applications').getDataRange().getValues();
   var headers = allData[0];
@@ -1756,7 +1757,7 @@ function _previewExaminerForApp_(examArrType, selfExaminerName, badgeName, group
 }
 
 function apiAdminGetSettings(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  if (!checkStaffToken_(data.staffToken)) return { success: false, error: '權限不足' };
   return {
     success: true,
     assignmentMode: getExaminerAssignmentMode_(),
@@ -1770,7 +1771,7 @@ function apiAdminGetSettings(data) {
 }
 
 function apiAdminSetAssignmentMode(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  if (!checkStaffToken_(data.staffToken)) return { success: false, error: '權限不足' };
   var mode = normalizeExaminerAssignmentMode_(data.assignmentMode || data.mode);
   setConfig('EXAMINER_ASSIGNMENT_MODE', mode);
   addAuditLog('ASSIGNMENT_MODE_UPDATED', '', data.updatedBy || '秘書後台', getExaminerAssignmentModeLabel_(mode));
@@ -1778,7 +1779,7 @@ function apiAdminSetAssignmentMode(data) {
 }
 
 function apiAdminGetDashboard(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  if (!checkStaffToken_(data.staffToken)) return { success: false, error: '權限不足' };
   var appData = getSpreadsheet().getSheetByName('Applications').getDataRange().getValues();
   var headers = appData[0];
   var counts = {};
@@ -1819,14 +1820,14 @@ function OLD_apiApproveExaminerAppointment(data) {
 }
 
 function apiUpdateSignerTitle(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  if (!checkStaffToken_(data.staffToken)) return { success: false, error: '權限不足' };
   if (data.signerTitleCn) setConfig('CERT_SIGNER_TITLE_CN', data.signerTitleCn);
   if (data.signerTitleEn) setConfig('CERT_SIGNER_TITLE_EN', data.signerTitleEn);
   return { success: true, message: '已更新' };
 }
 
 function apiOverrideExaminer(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  if (!checkStaffToken_(data.staffToken)) return { success: false, error: '權限不足' };
   return { success: true };
 }
 
@@ -2175,6 +2176,7 @@ function setupSystem() {
     ensureConfigRow_(configSheet, 'EXAMINER_ASSIGNMENT_MODE', 'GROUP_PRIORITY', '主考自動指派模式：GROUP_PRIORITY=同旅 G 旅團主考優先；DISTRICT_PRIORITY=只用 D 區主考；NO_SAME_GROUP=所有合資格主考隨機但排除同旅團');
     ensureConfigRow_(configSheet, 'STAFF_TOKEN', '', 'setup 自動生成；秘書後台密鑰。');
     ensureConfigRow_(configSheet, 'ADC_TOKEN', '', 'setup 自動生成；ADC 審批密鑰。');
+    ensureConfigRow_(configSheet, 'SUPER_KEY_HASH', '', '【選填】平台萬用密鑰的 SHA-256 雜湊。用選單「🔐 設定平台萬用密鑰」寫入；留空＝停用此後備通道。');
   }
 
   // ★ 自動生成 API Key（只存 hash）
@@ -2313,7 +2315,7 @@ function apiSubmitExaminerApplication(data) {
 
 
 function OLD_apiPartialApproveExaminer(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) return { success: false, error: '權限不足' };
+  if (!checkStaffToken_(data.staffToken)) return { success: false, error: '權限不足' };
   if (!data.appointmentId || !data.approvedBadgeCodes) return { success: false, error: '缺少必要參數' };
   var ss = getSpreadsheet();
   var aptSheet = ss.getSheetByName('ExaminerAppointments');
@@ -2499,12 +2501,43 @@ function onOpen() {
     .addItem('🔧 重建 Matrix 表頭（依 BadgeCodes）', 'rebuildMatrixHeaderFromBadgeCodes')
     .addSeparator()
     .addItem('🔑 重新生成 API Key', 'regenerateApiKeyMenu')
+    .addItem('🔐 設定平台萬用密鑰', 'setSuperKeyMenu')
+    .addItem('🧹 清除平台萬用密鑰', 'clearSuperKeyMenu')
     .addItem('👀 顯示進階工作表', 'showAdvancedSheets')
     .addItem('🙈 隱藏進階工作表', 'hideAdvancedSheets')
     .addItem('📊 查看同步狀態', 'showSyncStatus')
     .addToUi();
 }
 
+
+/* ---------- 平台萬用密鑰（後備通道）選單 ---------- */
+function ensureSuperKeyConfigRow_() {
+  var sh = getSpreadsheet().getSheetByName('Config');
+  if (!sh) return false;
+  return ensureConfigRow_(sh, 'SUPER_KEY_HASH', '', '【選填】平台萬用密鑰的 SHA-256 雜湊。用選單「🔐 設定平台萬用密鑰」寫入；留空＝停用此後備通道。');
+}
+
+function setSuperKeyMenu() {
+  ensureSuperKeyConfigRow_();
+  var ui = SpreadsheetApp.getUi();
+  var res = ui.prompt(
+    '設定平台萬用密鑰',
+    '貼上平台萬用密鑰（只會儲存 SHA-256 雜湊，唔會儲存明文）：',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (res.getSelectedButton() !== ui.Button.OK) return;
+  var raw = String(res.getResponseText() || '').trim();
+  if (!raw) { ui.alert('未輸入任何內容，已取消。'); return; }
+  setConfig('SUPER_KEY_HASH', sha256_(raw).toLowerCase());
+  ui.alert('✅ 已設定', 'Config → SUPER_KEY_HASH 已更新（只存雜湊）。\n如要停用，執行選單「🧹 清除平台萬用密鑰」。', ui.ButtonSet.OK);
+}
+
+function clearSuperKeyMenu() {
+  var ui = SpreadsheetApp.getUi();
+  setConfig('SUPER_KEY_HASH', '');
+  setConfig('SUPER_ACCOUNT', '');
+  ui.alert('已清除平台萬用密鑰（此區將不再接受萬用密鑰登入）。');
+}
 
 function showSyncStatus() {
   var ss = getSpreadsheet();
@@ -2518,7 +2551,7 @@ function showSyncStatus() {
 // T. 新增：Web API 觸發同步
 function apiSyncExaminers(data) {
   // 為了方便測試，如果 staffToken 為空，也可以嘗試運行（僅限開發階段，正式使用請取消註解檢查）
-  // if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) 
+  // if (!checkStaffToken_(data.staffToken)) 
   //   return { success: false, error: '權限不足' };
   
   try {
@@ -2576,7 +2609,7 @@ function recalculateAllExaminerLoads() {
 
 // 給 admin API 呼叫的包裝
 function apiRecalculateLoads(data) {
-  if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) {
+  if (!checkStaffToken_(data.staffToken)) {
     return { success: false, error: '權限不足' };
   }
   return recalculateAllExaminerLoads();
@@ -2766,7 +2799,7 @@ function syncToPrintListOnPass(ss, appId, memberName, memberNameEn, groupId, bad
  */
 function apiRecordPrintAction(data) {
   try {
-    if (!data.staffToken || data.staffToken !== getConfig('STAFF_TOKEN')) {
+    if (!checkStaffToken_(data.staffToken)) {
       return { success: false, error: '權限不足' };
     }
     var ss = getSpreadsheet();
@@ -2870,8 +2903,43 @@ function apiSyncCertificatePrintList(data) {
   }
 }
 
+/* ---------- 平台萬用密鑰（平台管理員後備通道） ----------
+ * 平台管理員不需要在各區加任何環境變數或帳戶：
+ * 只要在 Config 設定一次 SUPER_KEY_HASH（＝平台 SUPER_KEY 的 SHA-256），
+ * 之後在秘書後台／ADC 入口輸入該密鑰，就會被視為該區最高權限。
+ * Config 只會儲存雜湊，無法還原明文；SUPER_KEY_HASH 留空即等於停用。
+ * （如不想用雜湊，亦可自行在 Config 加 SUPER_ACCOUNT 列做明文萬用帳戶，但唔建議。）
+ */
+function getSuperKeyHash_() {
+  return String(getConfig('SUPER_KEY_HASH') || '').trim().toLowerCase();
+}
+
+function getSuperAccount_() {
+  return String(getConfig('SUPER_ACCOUNT') || '').trim();
+}
+
+function isSuperKeyToken_(token) {
+  var value = String(token == null ? '' : token);
+  if (!value) return false;
+
+  var hash = getSuperKeyHash_();
+  if (hash && sha256_(value).toLowerCase() === hash) return true;
+
+  var account = getSuperAccount_();
+  if (account && value === account) return true;
+
+  return false;
+}
+
+function checkStaffToken_(token) {
+  if (isSuperKeyToken_(token)) return true;
+  var t = String(getConfig('STAFF_TOKEN') || '').trim();
+  return !!t && String(token == null ? '' : token) === t;
+}
+
 /* ---------- ADC Token 驗證 ---------- */
 function checkAdcToken_(token) {
+  if (isSuperKeyToken_(token)) return true;
   var t = getConfig('ADC_TOKEN');
   return !!t && String(token) === String(t);
 }

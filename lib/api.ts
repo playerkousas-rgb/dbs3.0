@@ -1,9 +1,6 @@
 /**
  * API 呼叫封裝（DBS 3.0 多區版）
- * - 一般模式：所有請求經 /api/proxy 轉發，區 API Key 不經前端
- * - 超管模式：登入 /super 後，請求改經 /api/super/proxy，
- *   由伺服器從 Vercel 環境變數注入區 API Key / STAFF_KEY / ADC_KEY，
- *   超管唔需要亦唔應該在前端持有任何區密鑰。
+ * - 所有請求經 /api/proxy 轉發，API Key 不經前端
  * - 區碼從 localStorage 讀取
  */
 
@@ -14,35 +11,9 @@ function getDistrictCode(): string {
   return localStorage.getItem(DISTRICT_STORAGE_KEY) || '';
 }
 
-// ============================================================
-// 超管模式
-// ============================================================
-let superModeActive = false;
-let superDistrictCode: string | null = null;
-
-export function setSuperMode(active: boolean, districtCode?: string | null) {
-  superModeActive = !!active;
-  if (districtCode !== undefined) superDistrictCode = districtCode || null;
-}
-
-/** 超管模式下要操作的區碼；非超管模式回傳 null */
-export function getSuperModeTarget(): string | null {
-  if (!superModeActive) return null;
-  return superDistrictCode || getDistrictCode() || null;
-}
-
-export function isSuperMode(): boolean {
-  return superModeActive;
-}
-
-function endpointFor(target: string | null, action: string): string {
-  return target ? '/api/super/proxy' : '/api/proxy';
-}
-
 async function callGet(action: string, params?: Record<string, string>) {
-  const target = getSuperModeTarget();
-  const districtCode = target || getDistrictCode();
-  const url = new URL(endpointFor(target, action), window.location.origin);
+  const districtCode = getDistrictCode();
+  const url = new URL('/api/proxy', window.location.origin);
   url.searchParams.set('districtCode', districtCode);
   url.searchParams.set('action', action);
   if (params) {
@@ -50,7 +21,7 @@ async function callGet(action: string, params?: Record<string, string>) {
   }
 
   try {
-    const res = await fetch(url.toString(), { cache: 'no-store', credentials: 'same-origin' });
+    const res = await fetch(url.toString(), { cache: 'no-store' });
     const data = await res.json();
     if (!data.success && data.error) throw new Error(data.error);
     return data;
@@ -61,17 +32,13 @@ async function callGet(action: string, params?: Record<string, string>) {
 }
 
 async function callPost(action: string, body: any) {
-  const target = getSuperModeTarget();
-  const districtCode = target || getDistrictCode();
-  const postBody = target
-    ? { districtCode: target, action, ...body }
-    : { districtCode, action, ...body };
+  const districtCode = getDistrictCode();
+  const postBody = { districtCode, action, ...body };
 
   try {
-    const res = await fetch(endpointFor(target, action), {
+    const res = await fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
       body: JSON.stringify(postBody),
     });
     const data = await res.json();
