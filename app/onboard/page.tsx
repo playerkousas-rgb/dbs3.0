@@ -30,9 +30,14 @@ export default function OnboardPage() {
   return (
     <div style={{ maxWidth: '780px', margin: '0 auto', background: 'white', padding: '28px', borderRadius: '16px' }}>
       <h2 style={{ marginTop: 0, color: '#003366' }}>📮 提交區接入申請</h2>
-      <p style={{ color: '#666', lineHeight: 1.7 }}>
-        完成 Google Sheet + Apps Script 建置後，請在此填妥資料並寄給平台管理員指定電郵。開通後你區就可以使用。
+      <p style={{ color: '#666', lineHeight: 1.7, marginBottom: '4px' }}>
+        只需三步：
       </p>
+      <ol style={{ margin: '0 0 18px', paddingLeft: '20px', color: '#555', lineHeight: 2, fontSize: '14px' }}>
+        <li>完成該區 Google Sheet + Apps Script（見 <a href="/setup" style={{ color: '#1565c0', fontWeight: 600 }}>接入教學</a> 6 步）。</li>
+        <li>在下面填妥區名、區碼、聯絡人、<strong>/exec URL</strong> 及 <strong>API Key</strong>。</li>
+        <li>按「開啟電郵草稿」寄給平台管理員，等開通即可使用。</li>
+      </ol>
 
       <div style={{ display: 'grid', gap: '16px' }}>
         <TwoCol>

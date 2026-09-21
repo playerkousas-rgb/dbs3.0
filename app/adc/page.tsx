@@ -222,16 +222,21 @@ function AdminPanel() {
         <h3 style={{ color: '#003366', marginTop: 0 }}>🔐 ADC 審批登入</h3>
         <p style={{ color: '#666', fontSize: '14px' }}>助理區總監（童軍）專用。請輸入 ADC 審批密鑰。</p>
         {error && <div style={{ background: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '8px', marginBottom: '12px' }}>{error}</div>}
-        <input
-          type="password" value={token} placeholder="ADC 密鑰"
-          onChange={e => setToken(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') login(); }}
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box', marginBottom: '12px' }}
-        />
-        <button onClick={login} disabled={loading || !token} style={{
-          width: '100%', padding: '12px', background: loading ? '#ccc' : '#003366', color: 'white',
-          border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 600, cursor: 'pointer'
-        }}>{loading ? '驗證中...' : '登入'}</button>
+        <form onSubmit={e => { e.preventDefault(); login(); }}>
+          {/* 讓瀏覽器／密碼管理器可以儲存及自動填入密碼 */}
+          <input type="text" name="dbs_account" autoComplete="username" defaultValue="DBS" readOnly
+            style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }} />
+          <input
+            type="password" name="dbs_password" autoComplete="current-password"
+            value={token} placeholder="ADC 密鑰"
+            onChange={e => setToken(e.target.value)}
+            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box', marginBottom: '12px' }}
+          />
+          <button type="submit" disabled={loading || !token} style={{
+            width: '100%', padding: '12px', background: loading ? '#ccc' : '#003366', color: 'white',
+            border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 600, cursor: 'pointer'
+          }}>{loading ? '驗證中...' : '登入'}</button>
+        </form>
       </div>
     );
   }
@@ -360,16 +365,20 @@ function HelpPanel() {
         <h3 style={{ color: '#003366', marginTop: 0 }}>📖 說明文件（需驗證）</h3>
         <p style={{ color: '#666', fontSize: '14px' }}>此處含 ADC 操作指南與系統維護文件，請輸入 ADC 密鑰查看。</p>
         {error && <div style={{ background: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '8px', marginBottom: '12px' }}>{error}</div>}
-        <input
-          type="password" value={token} placeholder="ADC 密鑰"
-          onChange={e => setToken(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') login(); }}
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box', marginBottom: '12px' }}
-        />
-        <button onClick={login} disabled={loading || !token} style={{
-          width: '100%', padding: '12px', background: loading ? '#ccc' : '#003366', color: 'white',
-          border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 600, cursor: 'pointer'
-        }}>{loading ? '驗證中...' : '查看說明'}</button>
+        <form onSubmit={e => { e.preventDefault(); login(); }}>
+          <input type="text" name="dbs_account" autoComplete="username" defaultValue="DBS" readOnly
+            style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }} />
+          <input
+            type="password" name="dbs_password" autoComplete="current-password"
+            value={token} placeholder="ADC 密鑰"
+            onChange={e => setToken(e.target.value)}
+            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box', marginBottom: '12px' }}
+          />
+          <button type="submit" disabled={loading || !token} style={{
+            width: '100%', padding: '12px', background: loading ? '#ccc' : '#003366', color: 'white',
+            border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 600, cursor: 'pointer'
+          }}>{loading ? '驗證中...' : '查看說明'}</button>
+        </form>
       </div>
     );
   }
