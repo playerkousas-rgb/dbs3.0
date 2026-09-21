@@ -1,154 +1,278 @@
 import Link from 'next/link';
 import { PLATFORM_COPYRIGHT } from '@/lib/district';
 
-const quickItems = [
-  'Google 帳號 1 個',
-  '空白 Google Sheet 1 張',
-  '區碼（例如 CHW）',
+/**
+ * 區接入教學（公開 /setup）
+ * 版面原則：愈短愈好 —— 6 個大數字步驟，一眼睇完；
+ * 技術細節收在「詳情」摺疊內，需要時才打開。
+ */
+
+const CHIPS = [
+  'Google 帳號',
+  '空白 Google Sheet',
   '區名（例如 柴灣區）',
-  '本區聯絡 Email',
+  '區碼（例如 CHW）',
+  '聯絡 Email',
   '旅團資料',
-  '如有主考，可準備主考名單',
 ];
 
-const configItems = [
-  { key: 'DISTRICT_CODE', note: '必填，例如 CHW' },
-  { key: 'DISTRICT_NAME', note: '必填，例如 柴灣區' },
-  { key: 'EMAIL_REPLY_TO', note: '必填，秘書通知 Email' },
-  { key: 'ADC_EMAIL', note: '必填，ADC 主考申請通知 Email' },
-  { key: 'STAFF_TOKEN', note: '必填，秘書後台密鑰（請立即更改）' },
-  { key: 'ADC_TOKEN', note: '必填，ADC 審批密鑰（請立即更改）' },
-  { key: 'FRONTEND_URL', note: '已預設平台網址，不用改' },
-  { key: 'WEB_APP_URL', note: 'Deploy 後把 /exec URL 貼回此欄' },
-  { key: 'API_KEY_HASH', note: 'setup 自動生成，不要修改' },
-  { key: 'EXAMINER_ASSIGNMENT_MODE', note: '主考指派模式；可在秘書後台一鍵切換' },
+const AFTER_ITEMS = [
+  {
+    title: '加主考名單',
+    desc: '把主考資料填到 ExaminerMatrix，再按選單「🔄 同步主考資料」。',
+  },
+  {
+    title: '選主考機制',
+    desc: '旅團主考優先 / 只用區主考 / 同旅團不能擔任主考，可在秘書後台一鍵切換。',
+  },
+  {
+    title: '日後更新',
+    desc: '有新章時，到 /downloads 下載更新檔 → 貼上 → Run 1 次即可。',
+  },
 ];
 
 export default function SetupPage() {
   return (
-    <div style={{ display: 'grid', gap: '20px' }}>
-      <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
-        <h2 style={{ marginTop: 0, color: '#003366' }}>🧩 區接入教學</h2>
-        <p style={{ color: '#666', lineHeight: 1.8 }}>
-          這個平台由 Scout System 以中立第三方身份維護，採用「統一前端 + 各區獨立 Google Sheet / Apps Script 後台」模式。<br />
-          筲箕灣區是首個已接入及實際使用地區；其他地區只要照步驟建立自己區的 Sheet 後台，再把 <strong>/exec URL 和 API Key</strong> 提交給平台管理員即可接入。
+    <div style={{ display: 'grid', gap: '16px', maxWidth: '860px', margin: '0 auto' }}>
+      {/* ── 標題 ── */}
+      <section style={{ background: 'white', padding: '26px 28px', borderRadius: '16px' }}>
+        <h2 style={{ margin: 0, color: '#003366' }}>🧩 區接入教學</h2>
+        <p style={{ margin: '10px 0 0', color: '#555', lineHeight: 1.8 }}>
+          跟住下面 <strong>6 步</strong>做，你區就可以使用本平台。
+          每區都有自己的 Google Sheet 後台，資料由你區自行保管。
         </p>
       </section>
 
-      <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
-        <h3 style={{ marginTop: 0, color: '#003366' }}>你需要先準備</h3>
-        <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.9, color: '#333' }}>
-          {quickItems.map((item, idx) => <li key={idx}>{item}</li>)}
-        </ul>
+      {/* ── 需要準備 ── */}
+      <section style={{ background: 'white', padding: '22px 28px', borderRadius: '16px' }}>
+        <h3 style={{ margin: '0 0 12px', color: '#003366', fontSize: '16px' }}>需要準備</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {CHIPS.map(item => (
+            <span
+              key={item}
+              style={{
+                padding: '7px 14px',
+                borderRadius: '999px',
+                background: '#eef3f9',
+                color: '#003366',
+                fontSize: '13px',
+                fontWeight: 600,
+              }}
+            >
+              {item}
+            </span>
+          ))}
+        </div>
       </section>
 
-      <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
-        <h3 style={{ marginTop: 0, color: '#003366' }}>詳細步驟</h3>
-        <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.95, color: '#333' }}>
-          <li>先到 <strong>/downloads</strong> 下載或複製初始 GS 模板。</li>
-          <li>建立一張全新的空白 Google Sheet。</li>
-          <li>在上方選單按：<strong>Extensions → Apps Script</strong>。</li>
-          <li>把模板內容整份貼上，儲存。</li>
-          <li>在函數列表選擇 <code>setupSystem</code>，然後按 Run。</li>
-          <li>Google 會要求授權：請按 <strong>Review permissions → 選擇你的帳戶 → Advanced → Go to project → Allow</strong>。</li>
-          <li>⚠️ <strong>彈窗會顯示你的 API Key（只顯示一次！請立即複製！）</strong></li>
-          <li>跑完後，回到 Google Sheet，你會看到：
-            <ul style={{ marginTop: '8px', paddingLeft: '20px', lineHeight: 1.8 }}>
-              <li><strong>README_新手必看</strong>（紫色）</li>
-              <li><strong>Config</strong>（黃色）</li>
-              <li><strong>Groups</strong>（綠色）</li>
-              <li><strong>BadgeCodes</strong>（橙色，已預載最新章目）</li>
-              <li><strong>ExaminerMatrix</strong>（藍色，已自動按章目建好表頭）</li>
-            </ul>
-          </li>
-          <li>先打開 <strong>README_新手必看</strong>，再到黃色 <strong>Config</strong> 按指示填資料。</li>
-          <li>再到綠色 <strong>Groups</strong> 把例子資料改成你區真正旅團資料。</li>
-          <li>如你區<strong>本身已有主考名單</strong>，請直接把主考資料批量填到藍色 <strong>ExaminerMatrix</strong>，不用叫他們重新申請。</li>
-          <li>當你填好 ExaminerMatrix 後，可用選單：<code>🏕️ DBS 管理 → 🔄 同步主考資料</code>，讓前端讀取用的 Examiners 自動同步。</li>
-          <li>如你的地區想決定「旅團主考優先」、「只用區主考（公平模式）」或「同旅團不能擔任主考」，可先在 Config 設定 <code>EXAMINER_ASSIGNMENT_MODE</code>，之後亦可在秘書後台「⚖️ 主考機制」一鍵切換。</li>
-          <li>回到 Apps Script，按：<strong>Deploy → New deployment → 類型選 Web App</strong>。</li>
-          <li>設定：
-            <ul style={{ marginTop: '8px', paddingLeft: '20px', lineHeight: 1.8 }}>
-              <li><strong>Execute as：</strong> Me</li>
-              <li><strong>Who has access：</strong> Anyone</li>
-            </ul>
-          </li>
-          <li>按 Deploy 後，複製 <strong>/exec URL</strong>，貼回黃色 Config 的 <code>WEB_APP_URL</code>。</li>
-          <li>到前端 <strong>/onboard</strong>，填入區名、區碼、/exec URL、<strong>API Key</strong>，提交給平台管理員。</li>
-          <li>等平台管理員開通，即可使用。</li>
-        </ol>
+      {/* ── 6 步 ── */}
+      <section style={{ display: 'grid', gap: '12px' }}>
+        <Step n={1} title="下載 GS 模板" desc={<>到 <Link href="/downloads" style={link}>下載區</Link>複製或下載初始模板。</>} />
+
+        <Step
+          n={2}
+          title="開一張空白 Google Sheet，貼上模板"
+          desc={<>新開一張空白 Sheet → 上方選單 <strong>Extensions → Apps Script</strong> → 把模板內容整份貼上。</>}
+        />
+
+        <Step
+          n={3}
+          title="執行 setupSystem，抄低 API Key"
+          desc={<>在 Apps Script 選 <code style={code}>setupSystem</code> → 按 Run → 依指示授權。</>}
+          detail={
+            <>
+              <p style={detailP}>Google 會要求授權：<strong>Review permissions → 選你的帳戶 → Advanced → Go to project → Allow</strong>。</p>
+              <p style={detailP}>⚠️ 跑完會彈出 <strong>API Key（只顯示一次）</strong>，請立即複製保存。忘記了可以到 Sheet 選單 → 重新生成。</p>
+              <p style={{ ...detailP, marginBottom: 0 }}>之後 Sheet 會自動出現：README_新手必看、Config（黃）、Groups（綠）、BadgeCodes（橙）、ExaminerMatrix（藍）。</p>
+            </>
+          }
+        />
+
+        <Step
+          n={4}
+          title="填 Config"
+          desc={<>最少填 <strong>區名、區碼、聯絡 Email、STAFF_TOKEN、ADC_TOKEN</strong>。</>}
+          detail={
+            <>
+              {[
+                ['DISTRICT_CODE', '必填，例如 CHW'],
+                ['DISTRICT_NAME', '必填，例如 柴灣區'],
+                ['EMAIL_REPLY_TO', '必填，秘書通知 Email'],
+                ['ADC_EMAIL', '必填，主考申請通知 Email'],
+                ['STAFF_TOKEN', '必填，秘書後台密碼（請改做你自己的）'],
+                ['ADC_TOKEN', '必填，ADC 審批密碼（請改做你自己的）'],
+                ['FRONTEND_URL', '已預設平台網址，不用改'],
+                ['WEB_APP_URL', '第 5 步 Deploy 後貼回這裡'],
+                ['API_KEY_HASH', 'setup 自動生成，不要改'],
+                ['EXAMINER_ASSIGNMENT_MODE', '主考指派模式，可日後在後台切換'],
+              ].map(([key, note]) => (
+                <div key={key} style={{ display: 'flex', gap: '10px', padding: '6px 0', borderBottom: '1px solid #eef1f5' }}>
+                  <code style={{ ...code, flexShrink: 0 }}>{key}</code>
+                  <span style={{ fontSize: '13px', color: '#555' }}>{note}</span>
+                </div>
+              ))}
+              <p style={{ ...detailP, marginTop: '10px', marginBottom: 0 }}>
+                記得一併改綠色 <strong>Groups</strong>（旅團資料）及彈窗顯示的 API Key 要保存好。
+              </p>
+            </>
+          }
+        />
+
+        <Step
+          n={5}
+          title="Deploy 為 Web App，複製 /exec URL"
+          desc={<>Apps Script → <strong>Deploy → New deployment → Web App</strong> → 複製 <strong>/exec URL</strong>，貼回 Config 的 <code style={code}>WEB_APP_URL</code>。</>}
+          detail={
+            <p style={{ ...detailP, marginBottom: 0 }}>
+              設定：<strong>Execute as：Me</strong>、<strong>Who has access：Anyone</strong>
+              （唔選 Anyone 的話，前端會連唔到後台。）
+            </p>
+          }
+        />
+
+        <Step
+          n={6}
+          title="提交接入申請"
+          desc={<>到 <Link href="/onboard" style={link}>接入申請</Link>填區名、區碼、/exec URL、API Key，寄給平台管理員。</>}
+          detail={
+            <p style={{ ...detailP, marginBottom: 0 }}>
+              平台管理員核對後會為你區開通，之後就可以用平台的報考、查詢、主考等全部功能。
+            </p>
+          }
+        />
       </section>
 
-      <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
-        <h3 style={{ marginTop: 0, color: '#003366' }}>Config 你最需要填的欄位</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
-          {configItems.map((item) => (
-            <div key={item.key} style={{ border: '1px solid #eee', borderRadius: '12px', padding: '14px', background: '#fcfdff' }}>
-              <div style={{ fontWeight: 700, color: '#003366' }}>{item.key}</div>
-              <div style={{ fontSize: '13px', color: '#666', marginTop: '6px', lineHeight: 1.6 }}>{item.note}</div>
+      {/* ── 完成之後 ── */}
+      <section style={{ background: 'white', padding: '22px 28px', borderRadius: '16px' }}>
+        <h3 style={{ margin: '0 0 6px', color: '#003366', fontSize: '16px' }}>完成之後</h3>
+        <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
+          {AFTER_ITEMS.map(item => (
+            <div key={item.title} style={{ display: 'flex', gap: '10px', alignItems: 'baseline' }}>
+              <span style={{ color: '#2e7d32', fontWeight: 700 }}>✓</span>
+              <span style={{ fontSize: '14px', color: '#333' }}>
+                <strong>{item.title}</strong>
+                <span style={{ color: '#666' }}> — {item.desc}</span>
+              </span>
             </div>
           ))}
         </div>
       </section>
 
-      <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
-        <h3 style={{ marginTop: 0, color: '#003366' }}>🛡️ 你的資料有多安全？</h3>
-        <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.85, color: '#444' }}>
-          <li>你的資料存在 <strong>Google 伺服器</strong>（Google Sheet），不是某台不知名的電腦</li>
-          <li>API Key 只存在 <strong>Vercel 伺服器環境變數</strong>，不會出現在任何前端代碼</li>
-          <li>Config 只存 API Key 的雜湊值（API_KEY_HASH），連管理員也無法還原明文</li>
-          <li>要取得你的資料，攻擊者要麼攻破 Google 伺服器，要麼攻破 Vercel 伺服器</li>
-          <li>這比把資料存在自己家裡的電腦更安全</li>
-        </ul>
-      </section>
-
-      <section style={{ background: 'white', padding: '28px', borderRadius: '16px' }}>
-        <h3 style={{ marginTop: 0, color: '#003366' }}>更新方式（平台日後會提供 patch）</h3>
-        <p style={{ color: '#666', lineHeight: 1.8 }}>
-          日後若有新章或小更新，平台會在 <strong>/updates</strong> 公告，並在 <strong>/downloads</strong> 提供 patch。
-        </p>
-        <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', color: '#334155', lineHeight: 1.8 }}>
-          <strong>正確流程：</strong><br />
-          新章 = <strong>貼更新檔 GS + Run 1 次</strong><br />
-          如再改主考資格 = <strong>改 ExaminerMatrix + 同步主考資料</strong><br />
-          如改公平安排 = <strong>秘書後台 → ⚖️ 主考機制 → 三種模式一鍵切換</strong>
-        </div>
-        <p style={{ color: '#666', lineHeight: 1.8 }}>
-          不更新通常不會令整個系統失效，但新章或新功能可能未能使用。
+      {/* ── 資料放哪 ── */}
+      <section style={{ background: 'white', padding: '22px 28px', borderRadius: '16px' }}>
+        <h3 style={{ margin: '0 0 8px', color: '#003366', fontSize: '16px' }}>你的資料放哪？</h3>
+        <p style={{ margin: 0, color: '#555', fontSize: '14px', lineHeight: 1.9 }}>
+          全部放在<strong>你區自己的 Google Sheet</strong>；平台只負責前端畫面，
+          各區的 API Key 只存在平台伺服器的環境變數，不會出現在網頁代碼。
         </p>
       </section>
 
-      <section style={{ background: '#fff8e1', padding: '24px', borderRadius: '16px', border: '1px solid #f0d98a' }}>
-        <h3 style={{ marginTop: 0, color: '#8d6e00' }}>重要提醒</h3>
-        <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.85, color: '#6d4c41' }}>
-          <li><strong>FRONTEND_URL 已預設平台網址，不用改。</strong></li>
-          <li>Deploy 後把 /exec URL 貼回 Config 的 WEB_APP_URL，再到 <strong>/onboard</strong> 提交 /exec URL 和 API Key。</li>
-          <li>API Key 在 setup 彈窗只顯示一次。忘記了？到 Sheet 選單 → 重新生成 API Key。</li>
-          <li>前端 district mapping 由平台管理員統一維護。</li>
-          <li>各區只需維護本區 Google Sheet / Apps Script 及資料內容。</li>
-          <li>平台由 Scout System 以中立第三方身份維護；筲箕灣區只是首個使用地區。</li>
-          <li>平台版權固定保留，不屬各區自行更改項目。</li>
-          <li><strong>{PLATFORM_COPYRIGHT}</strong></li>
-        </ul>
-      </section>
-
+      {/* ── 按鈕 ── */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         <Link href="/downloads" style={{ textDecoration: 'none' }}>
-          <button style={{ padding: '12px 18px', borderRadius: '10px', border: 'none', background: '#003366', color: 'white', fontWeight: 700, cursor: 'pointer' }}>
-            下載初始 GS 模板
-          </button>
-        </Link>
-        <Link href="/updates" style={{ textDecoration: 'none' }}>
-          <button style={{ padding: '12px 18px', borderRadius: '10px', border: '1px solid #003366', background: 'white', color: '#003366', fontWeight: 700, cursor: 'pointer' }}>
-            查看更新公告
-          </button>
+          <button style={btnPrimary}>① 下載 GS 模板</button>
         </Link>
         <Link href="/onboard" style={{ textDecoration: 'none' }}>
-          <button style={{ padding: '12px 18px', borderRadius: '10px', border: '1px solid #003366', background: 'white', color: '#003366', fontWeight: 700, cursor: 'pointer' }}>
-            提交區接入申請
-          </button>
+          <button style={btnOutline}>⑥ 提交接入申請</button>
         </Link>
+        <Link href="/updates" style={{ textDecoration: 'none' }}>
+          <button style={btnOutline}>查看更新公告</button>
+        </Link>
+      </div>
+
+      <p style={{ textAlign: 'center', color: '#999', fontSize: '12px' }}>{PLATFORM_COPYRIGHT}</p>
+    </div>
+  );
+}
+
+/* ---------- 步驟卡 ---------- */
+function Step({
+  n,
+  title,
+  desc,
+  detail,
+}: {
+  n: number;
+  title: string;
+  desc: React.ReactNode;
+  detail?: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        background: 'white',
+        borderRadius: '14px',
+        padding: '18px 22px',
+        display: 'flex',
+        gap: '16px',
+        alignItems: 'flex-start',
+      }}
+    >
+      <div
+        style={{
+          flexShrink: 0,
+          width: '38px',
+          height: '38px',
+          borderRadius: '50%',
+          background: '#003366',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 700,
+          fontSize: '17px',
+        }}
+      >
+        {n}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, color: '#003366', fontSize: '15px' }}>{title}</div>
+        <div style={{ color: '#555', fontSize: '14px', lineHeight: 1.8, marginTop: '4px' }}>{desc}</div>
+        {detail && (
+          <details style={{ marginTop: '8px' }}>
+            <summary style={{ cursor: 'pointer', color: '#1565c0', fontSize: '13px', fontWeight: 600 }}>詳情</summary>
+            <div style={{ marginTop: '8px' }}>{detail}</div>
+          </details>
+        )}
       </div>
     </div>
   );
 }
+
+/* ---------- 樣式 ---------- */
+const code: React.CSSProperties = {
+  background: '#f1f5f9',
+  padding: '2px 6px',
+  borderRadius: '5px',
+  fontSize: '12.5px',
+  color: '#0f172a',
+};
+
+const detailP: React.CSSProperties = {
+  margin: '0 0 8px',
+  fontSize: '13px',
+  color: '#555',
+  lineHeight: 1.85,
+};
+
+const link: React.CSSProperties = { color: '#1565c0', fontWeight: 600 };
+
+const btnPrimary: React.CSSProperties = {
+  padding: '12px 18px',
+  borderRadius: '10px',
+  border: 'none',
+  background: '#003366',
+  color: 'white',
+  fontWeight: 700,
+  cursor: 'pointer',
+};
+
+const btnOutline: React.CSSProperties = {
+  padding: '12px 18px',
+  borderRadius: '10px',
+  border: '1px solid #003366',
+  background: 'white',
+  color: '#003366',
+  fontWeight: 700,
+  cursor: 'pointer',
+};
