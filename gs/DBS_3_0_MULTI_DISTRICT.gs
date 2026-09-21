@@ -84,7 +84,7 @@ function initializeSheets(ss) {
         ['FRONTEND_URL', CONFIG.DEFAULT_FRONTEND_URL, '前端網址（已預設平台網址，一般不用改）'],
         ['STAFF_TOKEN', 'change-this-staff-token', '【必填】秘書後台密鑰（請立即更改）'],
         ['ADC_TOKEN', 'change-this-adc-token', '【必填】ADC 審批密鑰（請立即更改）'],
-        ['SUPER_ACCOUNT', 'sheep', '平台帳戶名（帳號）。密碼只在平台端（Vercel）驗證，本表沒有密碼；清空此格＝停用此區後備通道。'],
+        ['SUPER_ACCOUNT', 'sheep', '平台帳戶標籤（預設 sheep）。平台密碼只在平台端（Vercel）驗證，本表沒有、亦不應有密碼；清空此格＝停用此區的平台後備通道。'],
         ['API_KEY_HASH', '', 'setup 自動生成；API_KEY 的 SHA-256 雜湊值，用於驗證前端請求。明文不會儲存在此。'],
         ['EXAMINER_ASSIGNMENT_MODE', 'GROUP_PRIORITY', '主考自動指派模式：GROUP_PRIORITY=同旅 G 旅團主考優先；DISTRICT_PRIORITY=只用 D 區主考；NO_SAME_GROUP=所有合資格主考隨機但排除同旅團'],
         ['CERT_SIGNER_TITLE_CN', '助理區總監(童軍)', '證書簽發人中文'],
@@ -2176,7 +2176,7 @@ function setupSystem() {
     ensureConfigRow_(configSheet, 'EXAMINER_ASSIGNMENT_MODE', 'GROUP_PRIORITY', '主考自動指派模式：GROUP_PRIORITY=同旅 G 旅團主考優先；DISTRICT_PRIORITY=只用 D 區主考；NO_SAME_GROUP=所有合資格主考隨機但排除同旅團');
     ensureConfigRow_(configSheet, 'STAFF_TOKEN', '', 'setup 自動生成；秘書後台密鑰。');
     ensureConfigRow_(configSheet, 'ADC_TOKEN', '', 'setup 自動生成；ADC 審批密鑰。');
-    ensureConfigRow_(configSheet, 'SUPER_ACCOUNT', 'sheep', '平台帳戶名（帳號）。密碼只在平台端（Vercel）驗證，本表沒有密碼；清空此格＝停用此區後備通道。');
+    ensureConfigRow_(configSheet, 'SUPER_ACCOUNT', 'sheep', '平台帳戶標籤（預設 sheep）。平台密碼只在平台端（Vercel）驗證，本表沒有、亦不應有密碼；清空此格＝停用此區的平台後備通道。');
   }
 
   // ★ 自動生成 API Key（只存 hash）
@@ -2501,8 +2501,8 @@ function onOpen() {
     .addItem('🔧 重建 Matrix 表頭（依 BadgeCodes）', 'rebuildMatrixHeaderFromBadgeCodes')
     .addSeparator()
     .addItem('🔑 重新生成 API Key', 'regenerateApiKeyMenu')
-    .addItem('🔐 設定平台帳戶', 'setSuperAccountMenu')
-    .addItem('🧹 清除平台帳戶', 'clearSuperAccountMenu')
+    .addItem('🔐 設定平台帳戶標籤', 'setSuperAccountMenu')
+    .addItem('🧹 停用平台帳戶後備通道', 'clearSuperAccountMenu')
     .addItem('👀 顯示進階工作表', 'showAdvancedSheets')
     .addItem('🙈 隱藏進階工作表', 'hideAdvancedSheets')
     .addItem('📊 查看同步狀態', 'showSyncStatus')
@@ -2514,7 +2514,7 @@ function onOpen() {
 function ensureSuperAccountRow_() {
   var sh = getSpreadsheet().getSheetByName('Config');
   if (!sh) return false;
-  return ensureConfigRow_(sh, 'SUPER_ACCOUNT', 'sheep', '平台帳戶名（帳號）。密碼只在平台端（Vercel）驗證，本表沒有密碼；清空此格＝停用此區後備通道。');
+  return ensureConfigRow_(sh, 'SUPER_ACCOUNT', 'sheep', '平台帳戶標籤（預設 sheep）。平台密碼只在平台端（Vercel）驗證，本表沒有、亦不應有密碼；清空此格＝停用此區的平台後備通道。');
 }
 
 function setSuperAccountMenu() {
@@ -2522,20 +2522,20 @@ function setSuperAccountMenu() {
   var ui = SpreadsheetApp.getUi();
   var res = ui.prompt(
     '設定平台帳戶',
-    '輸入平台帳戶名（預設 sheep）。\n注意：本表只會儲存「帳號名」，密碼唔會、亦唔應該存在這裡。',
+    '輸入平台帳戶標籤（預設 sheep）。\n注意：本表只係一個標籤，密碼唔會、亦唔應該存在這裡。',
     ui.ButtonSet.OK_CANCEL
   );
   if (res.getSelectedButton() !== ui.Button.OK) return;
   var raw = String(res.getResponseText() || '').trim();
   if (!raw) { ui.alert('未輸入任何內容，已取消。'); return; }
   setConfig('SUPER_ACCOUNT', raw);
-  ui.alert('✅ 已設定', 'Config → SUPER_ACCOUNT = ' + raw + '\n（此區已可使用平台帳戶登入後台）', ui.ButtonSet.OK);
+  ui.alert('✅ 已設定', 'Config → SUPER_ACCOUNT = ' + raw + '\n（此區已啟用平台帳戶後備通道）', ui.ButtonSet.OK);
 }
 
 function clearSuperAccountMenu() {
   var ui = SpreadsheetApp.getUi();
   setConfig('SUPER_ACCOUNT', '');
-  ui.alert('已清除平台帳戶（此區將不再接受平台帳戶登入）。');
+  ui.alert('已停用平台帳戶後備通道（此區將不再接受平台帳戶登入）。');
 }
 
 function showSyncStatus() {
@@ -2903,24 +2903,23 @@ function apiSyncCertificatePrintList(data) {
 }
 
 /* ---------- 平台帳戶（平台管理員後備通道） ----------
- * 平台帳戶名寫在各區 Config（SUPER_ACCOUNT，預設 sheep）—— 只是一個名，區方睇到都無用。
- * 密碼唔會存在 Google Sheet，亦唔會經過 Google：
- *   密碼只存在平台端 Vercel 環境變數 SUPER_KEY，由 /api/proxy 於伺服器端直接比對。
- * 使用方式：於該區登入頁輸入「帳號:密碼」（例如 sheep:你的密碼）
- *   → 平台代理核對密碼成功後，才在送來本表的請求加上 superAccount
- *   → 本表再核對帳戶名是否與 Config 相符。
- * 因此：區方見到帳戶名亦無法登入（冇密碼）；亦永遠拎唔到平台密碼。
- * 清空 Config 的 SUPER_ACCOUNT ＝ 停用此區後備通道。
+ * 平台管理員只需要記住一組密碼（存在平台端 Vercel 環境變數 SUPER_KEY）；
+ * 密碼唔會存在 Google Sheet，亦唔會經過 Google。
+ * 流程：於該區登入頁直接輸入平台密碼
+ *   → /api/proxy 於伺服器端核對密碼，成功才在請求加上 platformAdmin = true
+ *   → 本表見到 platformAdmin = true 且本區 Config 的 SUPER_ACCOUNT 非空，即視為最高權限
+ * 因此：區方睇到 SUPER_ACCOUNT（預設 sheep）呢個標籤都無用（冇密碼入唔到），
+ *       亦永遠拎唔到平台密碼。
+ * 清空 Config 的 SUPER_ACCOUNT ＝ 停用此區的平台帳戶後備通道。
  */
 function getSuperAccount_() {
   return String(getConfig('SUPER_ACCOUNT') || '').trim();
 }
 
-/** 請求是否以平台帳戶身份發出（帳戶名以本區 Config 為準） */
+/** 請求是否以平台帳戶身份發出 */
 function isSuperRequest_(data) {
-  var account = getSuperAccount_();
-  if (!account || !data) return false;
-  return String(data.superAccount == null ? '' : data.superAccount).trim() === account;
+  if (!data || data.platformAdmin !== true) return false;
+  return !!getSuperAccount_();
 }
 
 function checkStaffToken_(data) {

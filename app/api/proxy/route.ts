@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DISTRICTS } from '@/lib/district';
-import {
-  clearFailedAttempts,
-  clientIp,
-  getPlatformKey,
-  isPlatformShaped,
-  isRateLimited,
-  noteFailedAttempt,
-  resolveSuperAccount,
-} from '@/lib/platformAccount';
+import { getPlatformKey, isPlatformPassword } from '@/lib/platformAccount';
 
 /**
  * DBS 3.0 — API Proxy
@@ -23,11 +15,11 @@ import {
  * POST: /api/proxy (body: { districtCode, action, ... })
  *
  * ── 平台帳戶（後備通道）────────────────────────────
- * 如使用者輸入「帳號:密碼」（例如 sheep:xxxxxxxx），本代理會：
- *   1. 以 Vercel 環境變數 SUPER_KEY 直接比對密碼（明文比對，不經 Google）
- *   2. 密碼正確 → 移除憑證，改為在請求加上 superAccount（帳戶名）
- *   3. 密碼錯誤 → 憑證原樣轉發（各區 GS 自然拒絕），並計入防暴力破解
- * 密碼永遠不會送到 Google Sheet；各區只會見到帳戶名。
+ * 使用者在該區登入頁（ADC 密鑰／秘書 STAFF_TOKEN 欄）直接輸入平台密碼即可：
+ *   1. 本代理以 Vercel 環境變數 SUPER_KEY 直接比對該輸入（明文比對，不經 Google）
+ *   2. 正確 → 移除該欄位，改為注入 platformAdmin = true
+ *   3. 不正確 → 原樣轉發（各區 GS 自然拒絕；該區自己的密鑰照舊運作）
+ * 密碼永遠唔會送到 Google Sheet；各區只會知道「這是平台帳戶」。
  *
  * 診斷：GET /api/proxy?districtCode=SKW&action=proxyDebug
  *       需要 request header「x-dbs-super-key: <SUPER_KEY>」，否則一律 401。
@@ -40,37 +32,25 @@ export const dynamic = 'force-dynamic';
 const CREDENTIAL_KEYS = ['staffToken', 'adcToken', 'token'] as const;
 
 /**
- * 檢查 body 內是否有平台帳戶憑證。
- * 回傳：{ superAccount } 或 { failed: true } 或 null
+ * 檢查 body 內是否有平台密碼。
+ * 回傳 { platformAdmin: true } 代表已通過核對；否則 null（原樣放行）。
  */
-function inspectCredentials(body: Record<string, any>): { superAccount?: string; failed?: boolean; shaped?: boolean } | null {
+function inspectCredentials(body: Record<string, any>): { platformAdmin?: true } | null {
   if (!getPlatformKey()) return null;
-
-  let shaped = false;
 
   for (const key of CREDENTIAL_KEYS) {
     const value = body?.[key];
     if (value == null || value === '') continue;
+    if (!isPlatformPassword(value)) continue;
 
-    // 只有「帳號:密碼」形狀才與平台帳戶有關；其他（例如區自己的 token）一律照舊轉發
-    if (!isPlatformShaped(value)) continue;
-    shaped = true;
-
-    const superAccount = resolveSuperAccount(value);
-    if (superAccount) {
-      // 成功：移除憑證（密碼不外流），改注入帳戶名
-      delete body[key];
-      delete body.superAccount;
-      body.superAccount = superAccount;
-      return { superAccount, shaped: true };
-    }
-
-    // 平台帳戶形狀但密碼錯：移除憑證，唔會送去 Google
+    // 成功：移除使用者輸入（密碼不外流），改為注入平台身份標記
     delete body[key];
-    return { failed: true, shaped: true };
+    delete body.platformAdmin;
+    body.platformAdmin = true;
+    return { platformAdmin: true };
   }
 
-  return shaped ? { shaped: true } : null;
+  return null;
 }
 
 export async function GET(request: NextRequest) {
@@ -127,33 +107,20 @@ export async function GET(request: NextRequest) {
   // 平台帳戶（GET 形式）
   const params: Record<string, any> = {};
   searchParams.forEach((value, key) => { params[key] = value; });
-  // 安全：一律先刪除客戶端自行送上的 superAccount（只有本代理核對密碼成功後才會補回）
-  delete params.superAccount;
-  const ip = clientIp(request);
+  // 安全：客戶端自行送上的 platformAdmin 一律刪除，只有本代理核對密碼成功後才會注入
+  delete params.platformAdmin;
   const inspected = inspectCredentials(params);
-  if (inspected?.shaped && isRateLimited(ip)) {
-    // 只有「帳號:密碼」形狀的嘗試才會被限流，區自己的 token 不受影響
-    return NextResponse.json({ success: false, error: '嘗試次數過多，請稍後再試' }, { status: 429 });
-  }
-  if (inspected?.failed) {
-    noteFailedAttempt(ip);
-    return NextResponse.json({ success: false, error: '權限不足' }, { status: 401 });
-  }
-  if (inspected?.superAccount) clearFailedAttempts(ip);
 
   // Build target URL for GET
   const url = new URL(district.apiBase);
   url.searchParams.set('action', action);
   url.searchParams.set('apiKey', apiKey);
   searchParams.forEach((value, key) => {
-    if (key === 'districtCode' || key === 'action' || key === 'superAccount') return;
-    if (inspected?.superAccount && (CREDENTIAL_KEYS as readonly string[]).includes(key)) return;
+    if (key === 'districtCode' || key === 'action' || key === 'platformAdmin') return;
+    if (inspected?.platformAdmin && (CREDENTIAL_KEYS as readonly string[]).includes(key)) return;
     url.searchParams.set(key, value);
   });
-  if (inspected?.superAccount) {
-    url.searchParams.delete('superAccount');
-    url.searchParams.set('superAccount', inspected.superAccount);
-  }
+  if (inspected?.platformAdmin) url.searchParams.set('platformAdmin', 'true');
 
   try {
     const res = await fetch(url.toString(), { cache: 'no-store' });
@@ -191,19 +158,9 @@ export async function POST(request: NextRequest) {
   }
 
   // 平台帳戶（POST 形式）
-  // 安全：一律先刪除客戶端自行送上的 superAccount（只有本代理核對密碼成功後才會補回）
-  delete rest.superAccount;
-  const ip = clientIp(request);
-  const inspected = inspectCredentials(rest);
-  if (inspected?.shaped && isRateLimited(ip)) {
-    // 只有「帳號:密碼」形狀的嘗試才會被限流，區自己的 token 不受影響
-    return NextResponse.json({ success: false, error: '嘗試次數過多，請稍後再試' }, { status: 429 });
-  }
-  if (inspected?.failed) {
-    noteFailedAttempt(ip);
-    return NextResponse.json({ success: false, error: '權限不足' }, { status: 401 });
-  }
-  if (inspected?.superAccount) clearFailedAttempts(ip);
+  // 安全：客戶端自行送上的 platformAdmin 一律刪除，只有本代理核對密碼成功後才會注入
+  delete rest.platformAdmin;
+  inspectCredentials(rest);
 
   // POST to Apps Script with apiKey in body
   const postBody = { action, apiKey, ...rest };
