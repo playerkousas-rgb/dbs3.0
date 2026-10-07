@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { Analytics } from '@vercel/analytics/next';
 import DistrictShell from '@/components/DistrictShell';
 
 export const metadata = {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={<main style={{ maxWidth: '1040px', margin: '0 auto', padding: '24px' }}>載入中...</main>}>
           <DistrictShell>{children}</DistrictShell>
         </Suspense>
+        <Analytics />
       </body>
     </html>
   );
