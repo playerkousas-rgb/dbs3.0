@@ -1,0 +1,42 @@
+# ── Vercel 部署排除清單 ─────────────────────────────────────────
+# 只影響「上傳到 Vercel 的檔案」，不影響 Git 版本控制。
+# 目的：加快建置、縮小部署包，避免文件／工具腳本進入 CDN。
+
+# 建置產物與依賴（Vercel 會自行安裝及建置）
+node_modules/
+.next/
+out/
+dist/
+uploads/
+.vercel/
+coverage/
+
+# 測試
+**/__tests__/
+**/*.test.*
+**/*.spec.*
+**/tests/
+jest.config.*
+playwright.config.*
+vitest.config.*
+
+# 文件與規格（部署不需要）
+README.md
+PLATFORM_KEY.md
+DBS 3.0MD
+DBS_3_0_MULTI_DISTRICT.txt
+docs/
+
+# Google Apps Script 後端原始碼與工具腳本（不參與 Next.js 建置）
+gs/
+scripts/
+
+# 本機環境變數（正式值只放在 Vercel Project Settings）
+.env
+.env.local
+.env.*.local
+
+# 作業系統雜項
+.DS_Store
+Thumbs.db
+*.log

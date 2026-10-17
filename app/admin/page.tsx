@@ -162,7 +162,7 @@ export default function AdminPage() {
   };
 
   const openPrint = (certId: string) => {
-    const url = withDistrict(`/admin/print-cert/${encodeURIComponent(certId)}?token=${encodeURIComponent(token)}`);
+    const url = withDistrict(`/admin/print-cert?id=${encodeURIComponent(certId)}&token=${encodeURIComponent(token)}`);
     window.open(url, '_blank');
   };
 

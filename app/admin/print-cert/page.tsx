@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { CertStandard } from '@/components/cert/CertStandard';
 import { CertReligious } from '@/components/cert/CertReligious';
@@ -10,10 +10,11 @@ import { CertSea } from '@/components/cert/CertSea';
 import { CertAir } from '@/components/cert/CertAir';
 
 function PrintCertInner() {
-  const params = useParams();
   const search = useSearchParams();
-  const certId = String(params?.id || '');
-  const token = search.get('token') || '';
+  // 靜態頁：證書 ID 由 query 傳入（/admin/print-cert?id=…&token=…），
+  // 避免 /admin/print-cert/[id] 這種動態段在 Vercel 上變成 Serverless Function。
+  const certId = search?.get('id') || '';
+  const token = search?.get('token') || '';
 
   const [cert, setCert] = useState<any>(null);
   const [loading, setLoading] = useState(true);
