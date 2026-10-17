@@ -20,7 +20,7 @@ import {
 } from '@/lib/district';
 import { useDistrict } from '@/lib/useDistrict';
 
-const PUBLIC_PATHS = ['/', '/setup', '/onboard', '/districts', '/guide', '/downloads', '/updates'];
+const PUBLIC_PATHS = ['/', '/setup', '/onboard', '/districts', '/guide', '/downloads', '/updates', '/admin/print-cert'];
 
 const navItems = [
   { href: '/apply', label: '📝 報考' },

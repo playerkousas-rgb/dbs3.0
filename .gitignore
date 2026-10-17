@@ -7,9 +7,15 @@
 /.next/
 /out/
 
-# production
+# production / build artifacts
 /build
 /dist
+
+# vercel
+.vercel/
+
+# runtime uploads（只在本機／伺服器產生，不入版控）
+/uploads/
 
 # typescript
 *.tsbuildinfo

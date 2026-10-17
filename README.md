@@ -56,6 +56,21 @@ https://districtbadgesystem30.vercel.app
 
 ---
 
+## Vercel 部署架構
+
+- **靜態頁面**：除 `/api/proxy` 外，所有頁面於 build 時預先產生（`next build` 顯示 `○ Static`），由 Vercel CDN 直接回應，不消耗 Function CPU。
+- **Serverless Function**：只有 `app/api/proxy` 一個。它負責在伺服器端加入各區 `DBS_{區碼}_APIKEY`、核對平台密碼 `SUPER_KEY`，所以**不可**啟用 `output: 'export'`（靜態匯出不支援 Route Handler，build 會直接失敗）。
+- **證書列印頁**：已改為靜態頁，網址為
+  ```text
+  /admin/print-cert?id={證書ID}&token={staffToken}
+  ```
+  舊格式 `/admin/print-cert/{id}` 已不再使用（舊連結請由後台重新開啟）。
+- **`vercel.json`**：只允許 `main` 分支自動部署。如需其他分支的預覽部署，在 `git.deploymentEnabled` 加入該分支即可。
+- **`.vercelignore`**：排除文件、測試、`gs/`、`scripts/`、建置產物等，縮小上傳與建置體積。
+- **`dist/` 與 `uploads/`**：屬本機建置／執行產物，已列入 `.gitignore`，不納入版控，亦不會上傳 Vercel。
+
+---
+
 ## 區接入流程
 
 其他區只需：
